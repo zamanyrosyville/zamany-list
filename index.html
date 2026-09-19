@@ -53,6 +53,12 @@ body.dark-mode .total{color:#fff !important}
 body.dark-mode #qtyControl{background:#111 !important;border-color:#333 !important}
 body.dark-mode #qtyControl button{background:#222 !important;color:#fff !important;border:1px solid #333 !important}
 body.dark-mode #qtyControl button[onclick="confirmAddPackage()"]{background:#1565c0 !important;color:#fff !important;border:1px solid #29b6f6 !important}
+body.dark-mode #helpModal [style*="background:#fff8e7"]{background:#111 !important}
+body.dark-mode #helpModal [style*="background:#fffdf0"]{background:#0a0a0a !important}
+body.dark-mode #helpModal [style*="background:#fff3c4"]{background:#1a1a1a !important}
+body.dark-mode #helpModal [style*="background:#ffebee"]{background:#2a1414 !important}
+body.dark-mode #helpModal [style*="background:#ffe0e0"]{background:#2a1414 !important}
+body.dark-mode #helpModal [style*="background:#fffef5"]{background:#111 !important}
 .filter-box{background:#fff3d0;border:1px solid #e6dcc0;border-radius:14px;padding:10px;margin-bottom:8px}
 .brand-banner{background:#fff3d0;border:1px solid #e6dcc0;border-radius:14px;padding:4px;margin-bottom:8px;overflow:hidden;text-align:center}
 .banner-photo{width:100%;height:auto;display:block;border-radius:10px}
@@ -155,7 +161,6 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <p>• المنتجات اللي عليها <span style="background:#ffebee !important;color:#c62828 !important;padding:1px 4px;border-radius:4px;border:1px solid #ef9a9a;font-size:10px">جديد</span> دي وصلت حديثاً</p>
 <p>• المنتجات اللي عليها <span style="background:#ffe0e0;color:#c62828;padding:1px 4px;border-radius:4px;font-size:10px">خصم X%</span> سعرها بعد الخصم بيظهر في العبوة</p>
 <p>• <strong>سلفر:</strong> عبوة معدن فضي شيك مقفولة - <strong>مفتوح:</strong> عبوة بلاستيك عادية</p>
-<p>• روزي فيل فيها كل العبوات - EMSA واكسل مفيهاش سلفر 50/100/250</p>
 </div>
 <button onclick="closeModal('helpModal')" style="width:100%;padding:10px;background:linear-gradient(135deg,#d9c49c 0%,#f4ecd8 100%);color:#3f7d32;border:none;border-radius:8px;cursor:pointer;font-weight:700;margin-top:10px">تمام، فهمت 👍</button>
 </div>
@@ -176,6 +181,20 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <button onclick="closeModal('adminPanel')" style="flex:1;padding:8px;background:#eee;color:#333;border:none;border-radius:6px;cursor:pointer">إغلاق</button>
 </div>
 <div id="adminStats" style="margin-top:10px;padding:8px;background:#fff;border-radius:6px;border:1px solid #eee;font-size:11px"></div>
+<div style="background:#fff8e7;border:1.5px solid #e6dcc0;border-radius:10px;padding:10px;font-size:11px;line-height:1.6;margin-top:10px">
+<p><strong>📊 الإحصائيات</strong></p>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<select id="anPeriod" style="flex:1;padding:6px;border-radius:6px;border:1px solid #e6dcc0">
+<option value="7">آخر 7 أيام</option>
+<option value="30">آخر 30 يوم</option>
+<option value="90">آخر 90 يوم</option>
+<option value="all">كل الفترة</option>
+</select>
+<button onclick="loadAnalytics()" style="padding:6px 10px;background:#d9c49c;color:#3f7d32;border:none;border-radius:6px;cursor:pointer">تحديث</button>
+<button onclick="loadWeeklyReport()" style="padding:6px 10px;background:#4b5a2b;color:#fff;border:none;border-radius:6px;cursor:pointer">التقرير الأسبوعي</button>
+</div>
+<div id="anResults" style="font-size:11px"></div>
+</div>
 </div>
 </div></div>
 
@@ -297,6 +316,7 @@ function fillFilters(){
 }
 function applyFilters(){
   let q=document.getElementById('search').value.toLowerCase().trim();
+  if(q) trackSearchDebounced();
   let filters = {
     q: q,
     house: document.getElementById('fHouse').value,
@@ -328,6 +348,164 @@ function getCartQtyForProduct(code){
   Object.values(order).forEach(i=>{ if(String(i.code)===String(code)) total+=i.qty; });
   return total;
 }
+// ===== Analytics خفيف (بيستخدم Firebase الموجود بالفعل - stats_daily) =====
+// بدون أي بيانات شخصية: كود صنف + تصنيف + عدادات بس
+let __an = {views:{}, searches:{}, selects:{}, cats:{}, wa:0, share:0, visits:0, hours:{}};
+let __anSeen = {};
+function __anToday(){ let d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function trackView(code, cat){
+  if(!code) return;
+  let k='v_'+code;
+  if(__anSeen[k]) return; __anSeen[k]=true;
+  __an.views[code]=(__an.views[code]||0)+1;
+  if(cat){ __an.cats[cat]=(__an.cats[cat]||0)+1; }
+}
+function trackSelect(code){ if(!code) return; __an.selects[code]=(__an.selects[code]||0)+1; }
+function trackWA(){ __an.wa+=1; }
+function trackShare(){ __an.share+=1; }
+function trackSearchDebounced(){
+  clearTimeout(window.__anSearchTimer);
+  window.__anSearchTimer=setTimeout(function(){
+    let el=document.getElementById('search'); if(!el) return;
+    let q=el.value.trim();
+    if(q.length<2) return;
+    filteredProducts.slice(0,10).forEach(function(p){ __an.searches[p.code]=(__an.searches[p.code]||0)+1; });
+  }, 1200);
+}
+function __anHasPending(){
+  return __an.wa>0 || __an.share>0 || __an.visits>0 || Object.keys(__an.views).length>0 || Object.keys(__an.searches).length>0 || Object.keys(__an.selects).length>0 || Object.keys(__an.hours).length>0;
+}
+function __anFlush(){
+  if(typeof db==='undefined' || !db || !__anHasPending()) return;
+  let inc=firebase.firestore.FieldValue.increment;
+  let payload={};
+  function addProd(field, obj){
+    if(!Object.keys(obj).length) return;
+    payload.products=payload.products||{};
+    Object.keys(obj).forEach(function(c){ payload.products[c]=payload.products[c]||{}; payload.products[c][field]=inc(obj[c]); });
+  }
+  addProd('views', __an.views);
+  addProd('searches', __an.searches);
+  addProd('selects', __an.selects);
+  if(Object.keys(__an.cats).length){
+    payload.categories=payload.categories||{};
+    Object.keys(__an.cats).forEach(function(c){ payload.categories[c]=payload.categories[c]||{}; payload.categories[c].views=inc(__an.cats[c]); });
+  }
+  if(Object.keys(__an.hours).length){
+    payload.hours=payload.hours||{};
+    Object.keys(__an.hours).forEach(function(h){ payload.hours[h]=inc(__an.hours[h]); });
+  }
+  if(__an.visits>0) payload.visits=inc(__an.visits);
+  if(__an.wa>0) payload.whatsappClicks=inc(__an.wa);
+  if(__an.share>0) payload.shares=inc(__an.share);
+  __an={views:{}, searches:{}, selects:{}, cats:{}, wa:0, share:0, visits:0, hours:{}};
+  try{ db.collection('stats_daily').doc(__anToday()).set(payload, {merge:true}).catch(function(){}); }catch(e){}
+}
+setInterval(__anFlush, 20000);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') __anFlush(); });
+window.addEventListener('beforeunload', __anFlush);
+(function(){
+  try{
+    let today=__anToday();
+    if(localStorage.getItem('zamany_last_visit_date')!==today){
+      localStorage.setItem('zamany_last_visit_date', today);
+      __an.visits=1;
+      __an.hours[new Date().getHours()]=1;
+    }
+  }catch(e){}
+})();
+function __anTopN(obj, field, n){
+  return Object.keys(obj).map(function(k){ return {code:k, val: field? (obj[k][field]||0) : obj[k]}; })
+    .filter(function(x){ return x.val>0; })
+    .sort(function(a,b){ return b.val-a.val; })
+    .slice(0,n);
+}
+function __anProductName(code){
+  let p=PRODUCTS.find(function(x){ return String(x.code)===String(code); });
+  return p ? p.name : code;
+}
+function __anListHtml(arr, useName){
+  if(!arr.length) return '<li>لا يوجد بيانات</li>';
+  return arr.map(function(x){ return '<li>'+(useName?__anProductName(x.code):x.code)+' ('+x.val+')</li>'; }).join('');
+}
+function loadAnalytics(){
+  if(typeof db==='undefined' || !db){ document.getElementById('anResults').innerHTML='قاعدة البيانات مش متاحة'; return; }
+  let period=document.getElementById('anPeriod').value;
+  let resultsEl=document.getElementById('anResults');
+  resultsEl.innerHTML='جاري التحميل...';
+  let todayStr=__anToday();
+  let q=db.collection('stats_daily').orderBy(firebase.firestore.FieldPath.documentId());
+  if(period!=='all'){
+    let days=parseInt(period);
+    let start=new Date(Date.now()-(days-1)*86400000);
+    let startStr=start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-'+String(start.getDate()).padStart(2,'0');
+    q=q.startAt(startStr).endAt(todayStr);
+  }
+  q.get().then(function(snapshot){
+    let agg={products:{}, categories:{}, hours:{}, weekday:[0,0,0,0,0,0,0], visits:0, whatsappClicks:0, shares:0};
+    snapshot.forEach(function(doc){
+      let d=doc.data();
+      if(d.visits){ agg.visits+=d.visits; agg.weekday[new Date(doc.id+'T00:00:00').getDay()]+=d.visits; }
+      if(d.whatsappClicks) agg.whatsappClicks+=d.whatsappClicks;
+      if(d.shares) agg.shares+=d.shares;
+      if(d.hours) Object.keys(d.hours).forEach(function(h){ agg.hours[h]=(agg.hours[h]||0)+d.hours[h]; });
+      if(d.products) Object.keys(d.products).forEach(function(c){
+        agg.products[c]=agg.products[c]||{views:0,searches:0,selects:0};
+        agg.products[c].views+=(d.products[c].views||0);
+        agg.products[c].searches+=(d.products[c].searches||0);
+        agg.products[c].selects+=(d.products[c].selects||0);
+      });
+      if(d.categories) Object.keys(d.categories).forEach(function(c){ agg.categories[c]=(agg.categories[c]||0)+(d.categories[c].views||0); });
+    });
+    let weekdayNames=['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    let busiestWeekdayIdx=agg.weekday.indexOf(Math.max.apply(null, agg.weekday));
+    let busiestHour=Object.keys(agg.hours).sort(function(a,b){ return agg.hours[b]-agg.hours[a]; })[0];
+    let html='';
+    html+='<p><strong>إجمالي الزيارات:</strong> '+agg.visits+' | <strong>ضغطات واتساب:</strong> '+agg.whatsappClicks+' | <strong>مشاركات:</strong> '+agg.shares+'</p>';
+    html+='<p><strong>أكثر يوم نشاطًا:</strong> '+(agg.visits>0?weekdayNames[busiestWeekdayIdx]:'-')+' | <strong>أكثر ساعة نشاطًا:</strong> '+(busiestHour!==undefined?busiestHour+':00':'-')+'</p>';
+    html+='<p style="margin-top:8px"><strong>🔝 أكثر 10 منتجات مشاهدة:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(agg.products,'views',10),true)+'</ol>';
+    html+='<p><strong>🔍 أكثر 10 منتجات بحثًا:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(agg.products,'searches',10),true)+'</ol>';
+    html+='<p><strong>✅ أكثر 10 منتجات اختيارًا:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(agg.products,'selects',10),true)+'</ol>';
+    html+='<p><strong>📁 أكثر التصنيفات مشاهدة:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(agg.categories,null,10),false)+'</ol>';
+    resultsEl.innerHTML=html;
+  }).catch(function(err){ resultsEl.innerHTML='حصل خطأ: '+err.message; });
+}
+function loadWeeklyReport(){
+  if(typeof db==='undefined' || !db){ document.getElementById('anResults').innerHTML='قاعدة البيانات مش متاحة'; return; }
+  let resultsEl=document.getElementById('anResults');
+  resultsEl.innerHTML='جاري تحميل التقرير الأسبوعي...';
+  let start14=new Date(Date.now()-13*86400000);
+  let start14Str=start14.getFullYear()+'-'+String(start14.getMonth()+1).padStart(2,'0')+'-'+String(start14.getDate()).padStart(2,'0');
+  let todayStr=__anToday();
+  db.collection('stats_daily').orderBy(firebase.firestore.FieldPath.documentId()).startAt(start14Str).endAt(todayStr).get().then(function(snapshot){
+    let thisWeekStart=new Date(Date.now()-6*86400000);
+    let thisWeekStartStr=thisWeekStart.getFullYear()+'-'+String(thisWeekStart.getMonth()+1).padStart(2,'0')+'-'+String(thisWeekStart.getDate()).padStart(2,'0');
+    let thisWeek={visits:0, wa:0, products:{}, categories:{}};
+    let lastWeek={visits:0, wa:0};
+    snapshot.forEach(function(doc){
+      let d=doc.data(); let id=doc.id;
+      if(id>=thisWeekStartStr){
+        thisWeek.visits+=(d.visits||0); thisWeek.wa+=(d.whatsappClicks||0);
+        if(d.products) Object.keys(d.products).forEach(function(c){
+          thisWeek.products[c]=thisWeek.products[c]||{views:0,searches:0};
+          thisWeek.products[c].views+=(d.products[c].views||0);
+          thisWeek.products[c].searches+=(d.products[c].searches||0);
+        });
+        if(d.categories) Object.keys(d.categories).forEach(function(c){ thisWeek.categories[c]=(thisWeek.categories[c]||0)+(d.categories[c].views||0); });
+      } else {
+        lastWeek.visits+=(d.visits||0); lastWeek.wa+=(d.whatsappClicks||0);
+      }
+    });
+    function pctChange(cur,prev){ if(prev===0) return cur>0?'+100%':'0%'; let p=Math.round((cur-prev)/prev*100); return (p>=0?'+':'')+p+'%'; }
+    let html='<p><strong>📅 التقرير الأسبوعي</strong></p>';
+    html+='<p>إجمالي الزيارات: '+thisWeek.visits+' ('+pctChange(thisWeek.visits,lastWeek.visits)+' عن الأسبوع اللي فات)</p>';
+    html+='<p>ضغطات واتساب: '+thisWeek.wa+' ('+pctChange(thisWeek.wa,lastWeek.wa)+' عن الأسبوع اللي فات)</p>';
+    html+='<p style="margin-top:6px"><strong>🔝 أكثر 10 مشاهدة:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(thisWeek.products,'views',10),true)+'</ol>';
+    html+='<p><strong>🔍 أكثر 10 بحثًا:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(thisWeek.products,'searches',10),true)+'</ol>';
+    html+='<p><strong>📁 أكثر التصنيفات مشاهدة:</strong></p><ol style="margin:4px 0 8px 16px;padding:0">'+__anListHtml(__anTopN(thisWeek.categories,null,10),false)+'</ol>';
+    resultsEl.innerHTML=html;
+  }).catch(function(err){ resultsEl.innerHTML='حصل خطأ: '+err.message; });
+}
 function renderResults(){
   let list=filteredProducts.slice(0,displayCount);
   let btn=document.getElementById('loadMoreBtn');
@@ -344,7 +522,7 @@ function renderResults(){
       let priceLabel=(p.price||0).toLocaleString('en-US')+' LE';
       let isNewMab=(p.new && String(p.new).trim()!=='');
       let newBadgeMab=isNewMab?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
-      html+='<div class="card" style="border:1.5px solid #b9a06a"><div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div><div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.family||'-')+'</div><div style="font-size:11px;color:#555">العدد: '+(p.ingredients||'-')+'</div>'+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">+ اختيار الكمية</button></div>';
+      html+='<div class="card" style="border:1.5px solid #b9a06a"><div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">+ اختيار الكمية</button></div>';
     } else {
       let isNewItem=(p.new && String(p.new).trim()!=='');
       let newBadge=isNewItem?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
@@ -359,6 +537,7 @@ let currentPkgQty=1;
 let currentPkgFin=0;
 function openPackageSelector(code){
   let p=PRODUCTS.find(x=>String(x.code)===String(code)); if(!p) return;
+  trackView(p.code, p.type);
   currentPkgProduct=p;
   currentSelectedPkgId=null;
   currentPkgQty=1;
@@ -368,7 +547,7 @@ function openPackageSelector(code){
   let isMab=(p.type==='مباخر' || p.brand==='مباخر');
   if(isMab){
     document.getElementById('pkgTitle').textContent='المبخرة - '+p.name+' - بالقطعة فقط';
-    document.getElementById('pkgProductInfo').innerHTML='الألوان: '+(p.family||'-')+' | العدد في الكرتونة: '+(p.ingredients||'-')+'<br>سعر القطعة: '+p.price.toLocaleString('en-US')+' LE';
+    document.getElementById('pkgProductInfo').innerHTML=((p.colors||p.family)?'الألوان: '+(p.colors||p.family)+' | ':'')+(p.ingredients?'العدد في الكرتونة: '+p.ingredients:'')+'<br>سعر القطعة: '+p.price.toLocaleString('en-US')+' LE';
     let grid=document.getElementById('pkgGrid');
     let fin=disc>0? Math.round(p.price*(1-disc/100)) : p.price;
     let html='';
@@ -419,6 +598,7 @@ function confirmAddPackage(){
     fin=disc>0? Math.round(base*(1-disc/100)) : base;
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor; }
   let key=p.code+'_'+currentSelectedPkgId;
+  trackSelect(p.code);
   if(order[key]) order[key].qty+=currentPkgQty; else order[key]={code:p.code,name:p.name,brand:p.brand,type:p.type,family:p.family,ingredients:p.ingredients,packageId:currentSelectedPkgId,packageLabel:label,packageFactor:factor,price:base,finalPrice:fin,qty:currentPkgQty};
   saveOrder(); closeModal('pkgModal');
 }
@@ -508,6 +688,7 @@ function copyOrder(){
   let list=Object.values(order);
   if(list.length===0){ alert('مفيش حاجة'); return; }
   if(!validateCustomerInfo()) return;
+  trackShare();
   let txt=buildOrderText();
   copyToClipboard(txt, function(ok){
     if(ok){ alert('تم نسخ الطلب ✅'); }
@@ -527,6 +708,7 @@ function shareWA(){
   let list=Object.values(order);
   if(list.length===0){ alert('مفيش حاجة في السلة'); return; }
   if(!validateCustomerInfo()) return;
+  trackWA();
   let txt=buildOrderText();
   let url='https://wa.me/?text='+encodeURIComponent(txt);
   try{
@@ -595,6 +777,7 @@ function handleExcelUpload(event){
           family: String(row['family']||row['العائلة']||row['Family']||'').trim(),
           ingredients: String(row['ingredients']||row['المكونات']||row['Ingredients']||'').trim(),
           unit: String(row['unit']||row['الوحدة']||row['Unit']||'').trim(),
+          colors: String(row['colors']||row['الألوان']||row['اللون']||row['Colors']||'').trim(),
           cartonQty: String(row['cartonQty']||row['عدد القطع بالكرتونة']||row['عدد القطع داخل الكرتونة']||row['CartonQty']||'').trim()
         };
       }).filter(p=>p.code && p.name);
@@ -651,8 +834,8 @@ function clearCustomProducts(){
 }
 function downloadTemplate(){
   let ws_data=[
-    ['code','name','english','house','brand','type','price','discount','new','family','ingredients','unit','cartonQty'],
-    ['1000001','مسك مثال','MUSK EXAMPLE','HOUSE','ROSY VILLE','شرقي','5000','10%','نعم','شرقي','مسك وعود','قطعة','12']
+    ['code','name','english','house','brand','type','price','discount','new','family','ingredients','unit','cartonQty','colors'],
+    ['1000001','مسك مثال','MUSK EXAMPLE','HOUSE','ROSY VILLE','شرقي','5000','10%','نعم','شرقي','مسك وعود','قطعة','12','']
   ];
   let ws=XLSX.utils.aoa_to_sheet(ws_data);
   let wb=XLSX.utils.book_new();
