@@ -348,6 +348,9 @@ function getCartQtyForProduct(code){
   Object.values(order).forEach(i=>{ if(String(i.code)===String(code)) total+=i.qty; });
   return total;
 }
+function productImgUrl(code){
+  return 'https://firebasestorage.googleapis.com/v0/b/zamany-list-f9cdf.firebasestorage.app/o/'+encodeURIComponent(code+'.jpg')+'?alt=media';
+}
 // ===== Analytics خفيف (بيستخدم Firebase الموجود بالفعل - stats_daily) =====
 // بدون أي بيانات شخصية: كود صنف + تصنيف + عدادات بس
 let __an = {views:{}, searches:{}, selects:{}, cats:{}, wa:0, share:0, visits:0, hours:{}};
@@ -522,7 +525,7 @@ function renderResults(){
       let priceLabel=(p.price||0).toLocaleString('en-US')+' LE';
       let isNewMab=(p.new && String(p.new).trim()!=='');
       let newBadgeMab=isNewMab?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
-      html+='<div class="card" style="border:1.5px solid #b9a06a"><div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">+ اختيار الكمية</button></div>';
+      html+='<div class="card" style="border:1.5px solid #b9a06a"><img src="'+productImgUrl(p.code)+'" loading="lazy" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:4px" onerror="this.style.display=\'none\'"><div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">+ اختيار الكمية</button></div>';
     } else {
       let isNewItem=(p.new && String(p.new).trim()!=='');
       let newBadge=isNewItem?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
