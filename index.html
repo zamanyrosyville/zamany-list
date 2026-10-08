@@ -143,7 +143,7 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <div style="text-align:center;margin:10px"><button id="loadMoreBtn" class="pill" onclick="loadMore()" style="padding:10px 20px;display:none">عرض المزيد</button></div>
 </div>
 <div id="toggle" class="toggle hidden" onclick="toggleSummary()">🛒 ملخص الطلب (<span id="toggleCount">0</span>)</div>
-<div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="actions"><button class="btn-copy" onclick="copyOrder()">📋 نسخ</button><button class="btn-wa" onclick="shareWA()">واتساب</button><button class="btn-clear" onclick="clearOrder()">مسح</button></div></div>
+<div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="actions" style="flex-wrap:wrap"><button class="btn-copy" onclick="copyOrder(true)">📋 نسخ بالسعر</button><button class="btn-copy" onclick="copyOrder(false)">📋 نسخ بدون سعر</button><button class="btn-wa" onclick="shareWA(true)">واتساب بالسعر</button><button class="btn-wa" onclick="shareWA(false)">واتساب بدون سعر</button><button class="btn-clear" onclick="clearOrder()">مسح</button></div></div>
 <div id="pkgModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="pkgTitle" style="font-size:12px">اختار نوع العبوة</h3><button onclick="closeModal('pkgModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div id="pkgProductInfo" style="font-size:10px;color:#4a4a4a;margin:4px 0"></div><div id="pkgGrid" class="pkg-grid"></div><div id="qtyControl" style="display:none;margin-top:10px;padding:8px;background:#fff;border:1.5px solid #e6dcc0;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px"><span>الكمية:</span><div style="display:flex;gap:8px;align-items:center"><button onclick="changePkgQty(-1)" style="width:26px;height:26px">-</button><span id="pkgQty">1</span><button onclick="changePkgQty(1)" style="width:26px;height:26px">+</button></div></div><div style="font-size:12px">الإجمالي: <b id="pkgTotalPrice"></b></div><button onclick="confirmAddPackage()" style="width:100%;padding:8px;background:#d9c49c;color:#3f7d32;border:none;border-radius:8px;margin-top:6px">+ أضف للطلب</button></div></div></div>
 
 
@@ -671,7 +671,12 @@ function updateSummary(){
 function toggleSummary(){ document.getElementById('summary').classList.toggle('open'); }
 function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(t==='discount'?'pillDiscount':'pillNew').classList.toggle('active',activePills[t]); applyFilters(); }
 function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); applyFilters(); }
-function buildOrderText(){
+const PKG_CODE_SUFFIX = {
+  silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
+  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5'
+};
+function orderItemFullCode(i){ return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
+function buildOrderText(withPrice){
   let list=Object.values(order);
   let after=list.reduce((s,i)=>s+i.finalPrice*i.qty,0);
   let now=new Date();
@@ -683,15 +688,18 @@ function buildOrderText(){
   txt+='👤 الاسم: '+custName+'\n';
   txt+='📱 الموبايل: '+custPhone+'\n';
   txt+='———————————————————\n';
-  list.forEach((i,idx)=>{
-    txt+=(idx+1)+') '+i.name+'\n';
-    txt+='   الكود: #'+i.code+'\n';
-    txt+='   البراند: '+(i.brand||'-')+'\n';
-    txt+='   العبوة: '+i.packageLabel+'   الكمية: '+i.qty+'\n';
-    txt+='   السعر: '+(i.finalPrice*i.qty).toLocaleString('en-US')+' LE\n';
-    txt+='———————————————————\n';
+  if(withPrice){ txt+='الكود\tالصنف\tالكمية\tالسعر\n'; }
+  else { txt+='الكود\tالصنف\tالكمية\n'; }
+  list.forEach((i)=>{
+    let fullCode=orderItemFullCode(i);
+    if(withPrice){
+      txt+=fullCode+'\t'+i.name+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
+    } else {
+      txt+=fullCode+'\t'+i.name+'\t'+i.qty+'\n';
+    }
   });
-  txt+='💰 الإجمالي: '+after.toLocaleString('en-US')+' LE\n';
+  txt+='———————————————————\n';
+  if(withPrice){ txt+='💰 الإجمالي: '+after.toLocaleString('en-US')+' LE\n'; }
   txt+='عدد الأصناف: '+list.reduce((s,i)=>s+i.qty,0);
   return txt;
 }
@@ -740,12 +748,12 @@ function fallbackCopyToClipboard(text,onDone){
     if(onDone) onDone(ok);
   }catch(e){ if(onDone) onDone(false); }
 }
-function copyOrder(){
+function copyOrder(withPrice){
   let list=Object.values(order);
   if(list.length===0){ alert('مفيش حاجة'); return; }
   if(!validateCustomerInfo()) return;
   trackShare();
-  let txt=buildOrderText();
+  let txt=buildOrderText(withPrice);
   copyToClipboard(txt, function(ok){
     if(ok){ alert('تم نسخ الطلب ✅'); }
     else { alert('مقدرتش أنسخ تلقائي - هفتح نافذة تقدر تنسخ منها يدوي'); showManualCopyBox(txt); }
@@ -760,12 +768,12 @@ function showManualCopyBox(txt){
   div.innerHTML='<div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="font-size:13px">انسخ الطلب يدوياً</h3><button onclick="document.getElementById(\'manualCopyModal\').remove()" style="width:26px;height:26px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:15px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><textarea readonly style="width:100%;min-height:220px;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;direction:rtl" onclick="this.select()">'+txt.replace(/</g,'&lt;')+'</textarea><div style="font-size:10px;color:#4a4a4a;margin-top:6px">دوس على النص واعمل تحديد ونسخ (Select All / Copy)</div></div>';
   document.body.appendChild(div);
 }
-function shareWA(){
+function shareWA(withPrice){
   let list=Object.values(order);
   if(list.length===0){ alert('مفيش حاجة في السلة'); return; }
   if(!validateCustomerInfo()) return;
   trackWA();
-  let txt=buildOrderText();
+  let txt=buildOrderText(withPrice);
   let url='https://wa.me/?text='+encodeURIComponent(txt);
   try{
     let a=document.createElement('a');
