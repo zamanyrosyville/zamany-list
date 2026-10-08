@@ -276,6 +276,10 @@ const ALL_PACKAGES = [
 {id:'pack_1000', label:'مفتوح كيلو', factor:1, type:'pack'},
 {id:'pack_5000', label:'مفتوح 5 ك', factor:5, type:'pack'},
 ];
+const BAKHOOR_PACKAGES = [
+{id:'bakhoor_dozen', label:'دستة', factor:1},
+{id:'bakhoor_carton', label:'كرتونة (12 دستة)', factor:12},
+];
 function parseDiscount(v){ if(!v) return 0; let s=String(v).trim().replace('%',''); let n=parseFloat(s); if(isNaN(n)) return 0; if(n>0&&n<1) n*=100; return Math.min(90,Math.max(0,n)); }
 function isMabakhirProduct(p){ return p.type==='مباخر' || p.brand==='مباخر'; }
 function isBakhoorProduct(p){ return p.type==='بخور' || p.brand==='بخور' || p.type==='بخور خصال العود' || p.brand==='بخور خصال العود'; }
@@ -578,10 +582,10 @@ function renderResults(){
     let discPct=parseDiscount(p.discount);
     let discountBadge=discPct>0?'<span style="background:#8a3350;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">خصم '+discPct+'%</span>':'';
     if(isMab){
-      let priceLabel=(p.price||0).toLocaleString('en-US')+' LE';
+      let priceLabel=(isBakhoorProduct(p)?'سعر الدستة: ':'')+(p.price||0).toLocaleString('en-US')+' LE';
       let isNewMab=(p.new && String(p.new).trim()!=='');
       let newBadgeMab=isNewMab?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
-      html+='<div class="card" style="border:1.5px solid #b9a06a">'+(productImgUrl(p.code)?'<img src="'+productImgUrl(p.code)+'" loading="lazy" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:4px">':'')+'<div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">+ اختيار الكمية</button></div>';
+      html+='<div class="card" style="border:1.5px solid #b9a06a">'+(productImgUrl(p.code)?'<img src="'+productImgUrl(p.code)+'" loading="lazy" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:4px">':'')+'<div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">'+(isBakhoorProduct(p)?'+ اختيار الوحدة (دستة / كرتونة)':'+ اختيار الكمية')+'</button></div>';
     } else {
       let isNewItem=(p.new && String(p.new).trim()!=='');
       let newBadge=isNewItem?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
@@ -603,10 +607,8 @@ function openPackageSelector(code){
   let qtyCtrl=document.getElementById('qtyControl');
   if(qtyCtrl) qtyCtrl.style.display='none';
   let disc=parseDiscount(p.discount);
-  let isMab=isPieceProduct(p);
-  if(isMab){
-    let pieceWord=isBakhoorProduct(p)?'الصنف':'المبخرة';
-    document.getElementById('pkgTitle').textContent=pieceWord+' - '+p.name+' - بالقطعة فقط';
+  if(isMabakhirProduct(p)){
+    document.getElementById('pkgTitle').textContent='المبخرة - '+p.name+' - بالقطعة فقط';
     document.getElementById('pkgProductInfo').innerHTML=((p.colors||p.family)?'الألوان: '+(p.colors||p.family)+' | ':'')+(p.ingredients?'العدد في الكرتونة: '+p.ingredients:'')+'<br>سعر القطعة: '+p.price.toLocaleString('en-US')+' LE';
     let grid=document.getElementById('pkgGrid');
     let fin=disc>0? Math.round(p.price*(1-disc/100)) : p.price;
@@ -620,6 +622,18 @@ function openPackageSelector(code){
     let qc=document.getElementById('qtyControl'); if(qc) qc.style.display='block';
     document.getElementById('pkgQty').textContent='1';
     document.getElementById('pkgTotalPrice').textContent=fin.toLocaleString('en-US')+' LE';
+    document.getElementById('pkgModal').classList.add('open');
+    return;
+  }
+  if(isBakhoorProduct(p)){
+    document.getElementById('pkgTitle').textContent='اختار الوحدة - '+p.name;
+    let dozFin=discPrice(p.price,disc);
+    let cartFin=discPrice(Math.round(p.price*12),disc);
+    document.getElementById('pkgProductInfo').innerHTML='السعر في الإكسيل هو سعر الدستة<br>سعر الدستة: '+dozFin.toLocaleString('en-US')+' LE | سعر الكرتونة (12 دستة): '+cartFin.toLocaleString('en-US')+' LE';
+    let grid=document.getElementById('pkgGrid');
+    let html='';
+    BAKHOOR_PACKAGES.forEach(pkg=>{ let base=Math.round(p.price*pkg.factor); let fin=discPrice(base,disc); html+='<div class="pkg-item" id="pkg-'+pkg.id+'" onclick="selectPackage(\''+pkg.id+'\')">'+pkg.label+'<br><b>'+fin.toLocaleString('en-US')+' LE</b></div>'; });
+    grid.innerHTML=html;
     document.getElementById('pkgModal').classList.add('open');
     return;
   }
@@ -640,9 +654,11 @@ function selectPackage(pkgId){
   let p=currentPkgProduct; let disc=parseDiscount(p.discount);
   document.querySelectorAll('.pkg-item').forEach(el=>el.style.borderColor='#f4ecd8');
   let active=document.getElementById('pkg-'+pkgId); if(active){ active.style.borderColor='#d9c49c'; active.style.borderWidth='2px'; }
-  let base, fin; let isMab=isPieceProduct(p);
-  if(isMab){
+  let base, fin;
+  if(isMabakhirProduct(p)){
     base=p.price; fin=disc>0? Math.round(base*(1-disc/100)) : base;
+  } else if(isBakhoorProduct(p)){
+    let pkg=BAKHOOR_PACKAGES.find(x=>x.id===pkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc);
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===pkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); }
   currentPkgFin=fin;
   let qc=document.getElementById('qtyControl'); if(qc) qc.style.display='block';
@@ -652,10 +668,12 @@ function selectPackage(pkgId){
 function changePkgQty(delta){ currentPkgQty=Math.max(1, currentPkgQty+delta); document.getElementById('pkgQty').textContent=currentPkgQty; document.getElementById('pkgTotalPrice').textContent=(currentPkgFin*currentPkgQty).toLocaleString('en-US')+' LE'; }
 function confirmAddPackage(){
   if(!currentPkgProduct || !currentSelectedPkgId){ alert('اختار نوع العبوة الأول'); return; }
-  let p=currentPkgProduct; let disc=parseDiscount(p.discount); let base, fin, label, factor; let isMab=isPieceProduct(p);
-  if(isMab){
+  let p=currentPkgProduct; let disc=parseDiscount(p.discount); let base, fin, label, factor;
+  if(isMabakhirProduct(p)){
     label='قطعة'; factor=1; base=p.price;
     fin=disc>0? Math.round(base*(1-disc/100)) : base;
+  } else if(isBakhoorProduct(p)){
+    let pkg=BAKHOOR_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor;
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor; }
   let key=p.code+'_'+currentSelectedPkgId;
   trackSelect(p.code);
@@ -677,7 +695,8 @@ function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(
 function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); applyFilters(); }
 const PKG_CODE_SUFFIX = {
   silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
-  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5'
+  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5',
+  bakhoor_dozen:'/D', bakhoor_carton:'/C'
 };
 function orderItemFullCode(i){ return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
 function buildOrderText(withPrice){
@@ -692,14 +711,15 @@ function buildOrderText(withPrice){
   txt+='👤 الاسم: '+custName+'\n';
   txt+='📱 الموبايل: '+custPhone+'\n';
   txt+='———————————————————\n';
-  if(withPrice){ txt+='الكود\tالصنف\tالكمية\tالسعر\n'; }
-  else { txt+='الكود\tالصنف\tالكمية\n'; }
+  if(withPrice){ txt+='الكود\tالصنف\tالوحدة\tالكمية\tالسعر\n'; }
+  else { txt+='الكود\tالصنف\tالوحدة\tالكمية\n'; }
   list.forEach((i)=>{
     let fullCode=orderItemFullCode(i);
+    let unitLabel=i.packageLabel||'';
     if(withPrice){
-      txt+=fullCode+'\t'+i.name+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
+      txt+=fullCode+'\t'+i.name+'\t'+unitLabel+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
     } else {
-      txt+=fullCode+'\t'+i.name+'\t'+i.qty+'\n';
+      txt+=fullCode+'\t'+i.name+'\t'+unitLabel+'\t'+i.qty+'\n';
     }
   });
   txt+='———————————————————\n';
