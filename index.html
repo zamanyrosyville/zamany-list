@@ -132,9 +132,10 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <div class="search-wrap"><input id="search" placeholder="ابحث بالاسم العربي أو الإنجليزي أو الكود..." oninput="applyFilters()"><span>🔍</span></div>
 <div class="select-wrap"><select id="sortOrder" onchange="applyFilters()"><option value="">الترتيب — الافتراضي</option><option value="name_asc">أبجديًا (أ - ي)</option><option value="name_desc">أبجديًا (ي - أ)</option><option value="code_asc">كود الصنف (تصاعدي)</option><option value="code_desc">كود الصنف (تنازلي)</option></select></div>
 <div class="grid-filters">
-<div style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fHouse" onchange="applyFilters()"><option value="">بيت الأزياء — الكل</option></select></div><div class="select-wrap" style="flex:1"><select id="fName" onchange="applyFilters()"><option value="">اسم الصنف — الكل</option></select></div></div>
-<div style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fType" onchange="applyFilters()"><option value="">النوع — الكل</option></select></div><div class="select-wrap" style="flex:1"><select id="fBrand" onchange="applyFilters()"><option value="">البراند — الكل</option></select></div></div>
-<div style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fPrice" onchange="applyFilters()"><option value="">السعر — الكل</option><option value="0-3000"><3000</option><option value="3000-5000">3000-5000</option><option value="5000-7000">5000-7000</option><option value="7000-999999">>7000</option></select></div><div class="select-wrap" style="flex:1"><select id="fFamily" onchange="applyFilters()"><option value="">العائلة الرئيسية — الكل</option></select></div></div>
+<div id="normalFilterRow1" style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fHouse" onchange="applyFilters()"><option value="">بيت الأزياء — الكل</option></select></div><div class="select-wrap" style="flex:1"><select id="fName" onchange="applyFilters()"><option value="">اسم الصنف — الكل</option></select></div></div>
+<div id="normalFilterRow2" style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fType" onchange="applyFilters()"><option value="">النوع — الكل</option></select></div><div class="select-wrap" style="flex:1"><select id="fBrand" onchange="applyFilters()"><option value="">البراند — الكل</option></select></div></div>
+<div id="normalFilterRow3" style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select id="fPrice" onchange="applyFilters()"><option value="">السعر — الكل</option><option value="0-3000"><3000</option><option value="3000-5000">3000-5000</option><option value="5000-7000">5000-7000</option><option value="7000-999999">>7000</option></select></div><div class="select-wrap" style="flex:1"><select id="fFamily" onchange="applyFilters()"><option value="">العائلة الرئيسية — الكل</option></select></div></div>
+<div id="bakhoorFilterRow" style="display:none;gap:6px"><div class="select-wrap" style="flex:1"><select id="fBakhoorType" onchange="applyFilters()"><option value="">نوع البخور — الكل</option></select></div><div class="select-wrap" style="flex:1"><select id="fBurnDuration" onchange="applyFilters()"><option value="">مدة الاشتعال — الكل</option></select></div></div>
 </div>
 <div class="clear" onclick="clearFilters()">🧹 مسح الفلاتر</div>
 </div>
@@ -282,8 +283,10 @@ const BAKHOOR_PACKAGES = [
 ];
 function parseDiscount(v){ if(!v) return 0; let s=String(v).trim().replace('%',''); let n=parseFloat(s); if(isNaN(n)) return 0; if(n>0&&n<1) n*=100; return Math.min(90,Math.max(0,n)); }
 function isMabakhirProduct(p){ return p.type==='مباخر' || p.brand==='مباخر'; }
-function isBakhoorProduct(p){ return p.type==='بخور' || p.brand==='بخور' || p.type==='بخور خصال العود' || p.brand==='بخور خصال العود'; }
-function isPieceProduct(p){ return isMabakhirProduct(p) || isBakhoorProduct(p); }
+function isBakhoorProduct(p){ let b=(p.brand||'').trim(); let t=(p.type||'').trim(); return b==='خصال العود' || b==='بخور خصال العود' || b==='بخور' || t==='خصال العود' || t==='بخور خصال العود' || t==='بخور'; }
+function isBakhoorStand(p){ return isBakhoorProduct(p) && (p.unit||'').trim()==='قطعة'; }
+function isBakhoorUnitProduct(p){ return isBakhoorProduct(p) && !isBakhoorStand(p); }
+function isPieceProduct(p){ return isMabakhirProduct(p) || isBakhoorStand(p); }
 function discPrice(base,d){ return d===0?base:Math.round(base*(1-d/100)); }
 function computeMatch(p, filters, exclude){
   if(filters.q && !((p.code+' '+p.name+' '+p.english+' '+p.house+' '+p.brand).toLowerCase().includes(filters.q))) return false;
@@ -293,6 +296,8 @@ function computeMatch(p, filters, exclude){
   if(filters.family && exclude!=='family' && p.family!==filters.family) return false;
   if(filters.name && exclude!=='name' && p.name!==filters.name) return false;
   if(filters.price && exclude!=='price'){ let mm=filters.price.split('-').map(Number); if(p.price<mm[0]||p.price>mm[1]) return false; }
+  if(filters.bakhoorType && exclude!=='bakhoorType' && p.bakhoorType!==filters.bakhoorType) return false;
+  if(filters.burnDuration && exclude!=='burnDuration' && p.burnDuration!==filters.burnDuration) return false;
   if(activeCategory==='mabakhir' && !isMabakhirProduct(p)) return false;
   if(activeCategory==='oils' && (isMabakhirProduct(p) || isBakhoorProduct(p))) return false;
   if(activeCategory==='bakhoor' && !isBakhoorProduct(p)) return false;
@@ -312,14 +317,25 @@ function updateSelectOptions(selectId, filters, fieldKey, getter, allLabel, capC
   el.value = values.includes(current) ? current : '';
 }
 function updateFilterOptions(filters){
-  updateSelectOptions('fHouse', filters, 'house', function(p){return p.house;}, 'بيت الأزياء — الكل');
-  updateSelectOptions('fBrand', filters, 'brand', function(p){return p.brand;}, 'البراند — الكل');
-  updateSelectOptions('fType', filters, 'type', function(p){return p.type;}, 'النوع — الكل');
-  updateSelectOptions('fFamily', filters, 'family', function(p){return p.family;}, 'العائلة الرئيسية — الكل');
-  updateSelectOptions('fName', filters, 'name', function(p){return p.name;}, 'اسم الصنف — الكل', 200);
+  if(activeCategory==='bakhoor'){
+    updateSelectOptions('fBakhoorType', filters, 'bakhoorType', function(p){return p.bakhoorType;}, 'نوع البخور — الكل');
+    updateSelectOptions('fBurnDuration', filters, 'burnDuration', function(p){return p.burnDuration;}, 'مدة الاشتعال — الكل');
+    updateSelectOptions('fName', filters, 'name', function(p){return p.name;}, 'اسم الصنف — الكل', 200);
+  } else {
+    updateSelectOptions('fHouse', filters, 'house', function(p){return p.house;}, 'بيت الأزياء — الكل');
+    updateSelectOptions('fBrand', filters, 'brand', function(p){return p.brand;}, 'البراند — الكل');
+    updateSelectOptions('fType', filters, 'type', function(p){return p.type;}, 'النوع — الكل');
+    updateSelectOptions('fFamily', filters, 'family', function(p){return p.family;}, 'العائلة الرئيسية — الكل');
+    updateSelectOptions('fName', filters, 'name', function(p){return p.name;}, 'اسم الصنف — الكل', 200);
+  }
 }
 function fillFilters(){
-  updateFilterOptions({q:'',house:'',brand:'',type:'',family:'',name:'',price:''});
+  updateFilterOptions({q:'',house:'',brand:'',type:'',family:'',name:'',price:'',bakhoorType:'',burnDuration:''});
+}
+function updateBakhoorFilterVisibility(){
+  let isBakhoorCat = activeCategory==='bakhoor';
+  ['normalFilterRow1','normalFilterRow2','normalFilterRow3'].forEach(id=>{ let el=document.getElementById(id); if(el) el.style.display = isBakhoorCat?'none':'flex'; });
+  let bf=document.getElementById('bakhoorFilterRow'); if(bf) bf.style.display = isBakhoorCat?'flex':'none';
 }
 function applyFilters(){
   let q=document.getElementById('search').value.toLowerCase().trim();
@@ -331,7 +347,9 @@ function applyFilters(){
     type: document.getElementById('fType').value,
     family: document.getElementById('fFamily').value,
     name: document.getElementById('fName').value,
-    price: document.getElementById('fPrice').value
+    price: document.getElementById('fPrice').value,
+    bakhoorType: document.getElementById('fBakhoorType').value,
+    burnDuration: document.getElementById('fBurnDuration').value
   };
   filteredProducts = PRODUCTS.filter(function(p){ return computeMatch(p, filters, null); });
   let sortOrder = document.getElementById('sortOrder').value;
@@ -348,6 +366,7 @@ function applyFilters(){
 function toggleCategory(cat){
   if(activeCategory===cat){ activeCategory='all'; document.getElementById('pillMabakhir').classList.remove('active'); document.getElementById('pillOils').classList.remove('active'); document.getElementById('pillBakhoor').classList.remove('active'); }
   else { activeCategory=cat; document.getElementById('pillMabakhir').classList.toggle('active', cat==='mabakhir'); document.getElementById('pillOils').classList.toggle('active', cat==='oils'); document.getElementById('pillBakhoor').classList.toggle('active', cat==='bakhoor'); }
+  updateBakhoorFilterVisibility();
   applyFilters();
 }
 function getCartQtyForProduct(code){
@@ -576,16 +595,16 @@ function renderResults(){
   if(list.length===0){ document.getElementById('results').innerHTML='<div style="padding:20px;color:#5a5a5a;text-align:center">لا يوجد نتائج - جرب تمسح الفلاتر</div>'; return; }
   let html='';
   list.forEach(p=>{
-    let isMab=isPieceProduct(p);
+    let isMab=isMabakhirProduct(p)||isBakhoorProduct(p);
     let cartQty=getCartQtyForProduct(p.code);
     let cartBadge=cartQty>0?'<div class="in-cart-badge">✅ في السلة × '+cartQty+'</div>':'';
     let discPct=parseDiscount(p.discount);
     let discountBadge=discPct>0?'<span style="background:#8a3350;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">خصم '+discPct+'%</span>':'';
     if(isMab){
-      let priceLabel=(isBakhoorProduct(p)?'سعر الدستة: ':'')+(p.price||0).toLocaleString('en-US')+' LE';
+      let priceLabel=(isBakhoorUnitProduct(p)?'سعر الدستة: ':'')+(p.price||0).toLocaleString('en-US')+' LE';
       let isNewMab=(p.new && String(p.new).trim()!=='');
       let newBadgeMab=isNewMab?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
-      html+='<div class="card" style="border:1.5px solid #b9a06a">'+(productImgUrl(p.code)?'<img src="'+productImgUrl(p.code)+'" loading="lazy" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:4px">':'')+'<div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">'+(isBakhoorProduct(p)?'+ اختيار الوحدة (دستة / كرتونة)':'+ اختيار الكمية')+'</button></div>';
+      html+='<div class="card" style="border:1.5px solid #b9a06a">'+(productImgUrl(p.code)?'<img src="'+productImgUrl(p.code)+'" loading="lazy" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:4px">':'')+'<div class="card-top"><span class="code">#'+String(p.code).replace('#','')+'</span><div class="price-normal">'+priceLabel+'</div></div><div class="top-row"><div class="names-right"><div style="font-size:13px;font-weight:800">'+p.name+'</div>'+((p.colors||p.family)?'<div style="font-size:11px;color:#333;margin-top:4px">الألوان: '+(p.colors||p.family)+'</div>':'')+(p.ingredients?'<div style="font-size:11px;color:#555">العدد بالكرتونة: '+p.ingredients+'</div>':'')+(p.unit?'<div style="font-size:11px;color:#555">الوحدة: '+p.unit+'</div>':'')+(p.cartonQty?'<div style="font-size:11px;color:#555">عدد القطع بالكرتونة: '+p.cartonQty+'</div>':'')+(p.bakhoorType?'<div style="font-size:11px;color:#555">نوع البخور: '+p.bakhoorType+'</div>':'')+(p.burnDuration?'<div style="font-size:11px;color:#555">مدة الاشتعال: '+p.burnDuration+'</div>':'')+(p.piecesPerUnit?'<div style="font-size:11px;color:#555">العدد في القطعة: '+p.piecesPerUnit+'</div>':'')+'</div><div class="brand-left" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="brand-name">'+p.brand+'</div>'+newBadgeMab+discountBadge+'</div></div>'+cartBadge+'<button class="btn-add" onclick="openPackageSelector(\''+p.code+'\')">'+(isBakhoorUnitProduct(p)?'+ اختيار الوحدة (دستة / كرتونة)':'+ اختيار الكمية')+'</button></div>';
     } else {
       let isNewItem=(p.new && String(p.new).trim()!=='');
       let newBadge=isNewItem?'<span style="background:#b5482f;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;margin-top:4px;display:inline-block">وصل حديثاً</span>':'';
@@ -607,8 +626,9 @@ function openPackageSelector(code){
   let qtyCtrl=document.getElementById('qtyControl');
   if(qtyCtrl) qtyCtrl.style.display='none';
   let disc=parseDiscount(p.discount);
-  if(isMabakhirProduct(p)){
-    document.getElementById('pkgTitle').textContent='المبخرة - '+p.name+' - بالقطعة فقط';
+  if(isMabakhirProduct(p) || isBakhoorStand(p)){
+    let pieceWord=isBakhoorStand(p)?'الصنف':'المبخرة';
+    document.getElementById('pkgTitle').textContent=pieceWord+' - '+p.name+' - بالقطعة فقط';
     document.getElementById('pkgProductInfo').innerHTML=((p.colors||p.family)?'الألوان: '+(p.colors||p.family)+' | ':'')+(p.ingredients?'العدد في الكرتونة: '+p.ingredients:'')+'<br>سعر القطعة: '+p.price.toLocaleString('en-US')+' LE';
     let grid=document.getElementById('pkgGrid');
     let fin=disc>0? Math.round(p.price*(1-disc/100)) : p.price;
@@ -625,7 +645,7 @@ function openPackageSelector(code){
     document.getElementById('pkgModal').classList.add('open');
     return;
   }
-  if(isBakhoorProduct(p)){
+  if(isBakhoorUnitProduct(p)){
     document.getElementById('pkgTitle').textContent='اختار الوحدة - '+p.name;
     let dozFin=discPrice(p.price,disc);
     let cartFin=discPrice(Math.round(p.price*12),disc);
@@ -655,9 +675,9 @@ function selectPackage(pkgId){
   document.querySelectorAll('.pkg-item').forEach(el=>el.style.borderColor='#f4ecd8');
   let active=document.getElementById('pkg-'+pkgId); if(active){ active.style.borderColor='#d9c49c'; active.style.borderWidth='2px'; }
   let base, fin;
-  if(isMabakhirProduct(p)){
+  if(isMabakhirProduct(p) || isBakhoorStand(p)){
     base=p.price; fin=disc>0? Math.round(base*(1-disc/100)) : base;
-  } else if(isBakhoorProduct(p)){
+  } else if(isBakhoorUnitProduct(p)){
     let pkg=BAKHOOR_PACKAGES.find(x=>x.id===pkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc);
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===pkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); }
   currentPkgFin=fin;
@@ -669,10 +689,10 @@ function changePkgQty(delta){ currentPkgQty=Math.max(1, currentPkgQty+delta); do
 function confirmAddPackage(){
   if(!currentPkgProduct || !currentSelectedPkgId){ alert('اختار نوع العبوة الأول'); return; }
   let p=currentPkgProduct; let disc=parseDiscount(p.discount); let base, fin, label, factor;
-  if(isMabakhirProduct(p)){
+  if(isMabakhirProduct(p) || isBakhoorStand(p)){
     label='قطعة'; factor=1; base=p.price;
     fin=disc>0? Math.round(base*(1-disc/100)) : base;
-  } else if(isBakhoorProduct(p)){
+  } else if(isBakhoorUnitProduct(p)){
     let pkg=BAKHOOR_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor;
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor; }
   let key=p.code+'_'+currentSelectedPkgId;
@@ -692,11 +712,10 @@ function updateSummary(){
 }
 function toggleSummary(){ document.getElementById('summary').classList.toggle('open'); }
 function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(t==='discount'?'pillDiscount':'pillNew').classList.toggle('active',activePills[t]); applyFilters(); }
-function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); applyFilters(); }
+function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder','fBakhoorType','fBurnDuration'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); updateBakhoorFilterVisibility(); applyFilters(); }
 const PKG_CODE_SUFFIX = {
   silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
-  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5',
-  bakhoor_dozen:'/D', bakhoor_carton:'/C'
+  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5'
 };
 function orderItemFullCode(i){ return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
 function buildOrderText(withPrice){
@@ -849,24 +868,29 @@ function handleExcelUpload(event){
       let worksheet=workbook.Sheets[firstSheet];
       let jsonData=XLSX.utils.sheet_to_json(worksheet,{defval:''});
       if(jsonData.length===0){ alert('الاكسل فاضي'); return; }
-      // Map to products format
+      // Map to products format - header names are matched after trimming spaces, so extra spaces in the Excel headers don't break anything
+      function normalizeRow(row){ let map={}; Object.keys(row).forEach(function(k){ map[String(k).trim()]=row[k]; }); return map; }
+      function getVal(map, candidates){ for(let i=0;i<candidates.length;i++){ let v=map[candidates[i]]; if(v!==undefined && v!==null && String(v).trim()!=='') return v; } return ''; }
       let newProducts=jsonData.map(row=>{
-        // Try different column names
+        let map=normalizeRow(row);
         return {
-          code: String(row['code']||row['الكود']||row['Code']||row['#']||'').replace('#','').trim(),
-          name: String(row['name']||row['الاسم العربي']||row['الاسم']||row['Name']||'').trim(),
-          english: String(row['english']||row['الاسم الانجليزي']||row['English']||'').trim(),
-          house: String(row['house']||row['بيت الازياء']||row['بيت الأزياء']||row['House']||'').trim(),
-          brand: String(row['brand']||row['البراند']||row['Brand']||'').trim(),
-          type: String(row['type']||row['النوع']||row['Type']||'').trim(),
-          price: Number(row['price']||row['السعر']||row['Price']||0),
-          discount: String(row['discount']||row['الخصم']||row['Discount']||'').trim(),
-          new: String(row['new']||row['جديد']||row['New']||'').trim(),
-          family: String(row['family']||row['العائلة']||row['Family']||'').trim(),
-          ingredients: String(row['ingredients']||row['المكونات']||row['Ingredients']||'').trim(),
-          unit: String(row['unit']||row['الوحدة']||row['Unit']||'').trim(),
-          colors: String(row['colors']||row['الألوان']||row['اللون']||row['Colors']||'').trim(),
-          cartonQty: String(row['cartonQty']||row['عدد القطع بالكرتونة']||row['عدد القطع داخل الكرتونة']||row['CartonQty']||'').trim()
+          code: String(getVal(map,['code','الكود','Code','#'])).replace('#','').trim(),
+          name: String(getVal(map,['name','اسم الصنف','الاسم العربي','الاسم','Name'])).trim(),
+          english: String(getVal(map,['english','English','الاسم الانجليزي'])).trim(),
+          house: String(getVal(map,['house','بيت الازياء','بيت الأزياء','House'])).trim(),
+          brand: String(getVal(map,['brand','البراند','Brand'])).trim(),
+          type: String(getVal(map,['type','النوع','Type'])).trim(),
+          price: Number(getVal(map,['price','السعر','Price'])||0),
+          discount: String(getVal(map,['discount','الخصم','Discount'])).trim(),
+          new: String(getVal(map,['new','جديد','وصل حديثا','New'])).trim(),
+          family: String(getVal(map,['family','العائلة الرئيسية','العائلة','Family'])).trim(),
+          ingredients: String(getVal(map,['ingredients','المكونات الغالبة','المكونات','Ingredients'])).trim(),
+          unit: String(getVal(map,['unit','الوحدة','Unit'])).trim(),
+          colors: String(getVal(map,['colors','الألوان','اللون','Colors'])).trim(),
+          cartonQty: String(getVal(map,['cartonQty','عدد القطع بالكرتونة','عدد القطع داخل الكرتونة','CartonQty'])).trim(),
+          bakhoorType: String(getVal(map,['bakhoorType','نوع البخور'])).trim(),
+          burnDuration: String(getVal(map,['burnDuration','مدة الاشتعال'])).trim(),
+          piecesPerUnit: String(getVal(map,['piecesPerUnit','العدد في القطعة'])).trim()
         };
       }).filter(p=>p.code && p.name);
       if(newProducts.length===0){ alert('مفيش بيانات صح في الاكسل - اتأكد ان الاعمدة: code, name, english, house, brand, type, price'); return; }
@@ -922,8 +946,9 @@ function clearCustomProducts(){
 }
 function downloadTemplate(){
   let ws_data=[
-    ['code','name','english','house','brand','type','price','discount','new','family','ingredients','unit','cartonQty','colors'],
-    ['1000001','مسك مثال','MUSK EXAMPLE','HOUSE','ROSY VILLE','شرقي','5000','10%','نعم','شرقي','مسك وعود','قطعة','12','']
+    ['code','name','english','house','brand','type','price','discount','new','family','ingredients','unit','cartonQty','colors','bakhoorType','burnDuration','piecesPerUnit'],
+    ['1000001','مسك مثال','MUSK EXAMPLE','HOUSE','ROSY VILLE','شرقي','5000','10%','نعم','شرقي','مسك وعود','قطعة','12','','',''],
+    ['1000-3','طائر الشمس','SUN BIRD','','خصال العود','','525','','نعم','','','دستة','12','','اعواد','3 ساعات','5 عود']
   ];
   let ws=XLSX.utils.aoa_to_sheet(ws_data);
   let wb=XLSX.utils.book_new();
