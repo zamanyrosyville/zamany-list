@@ -148,6 +148,7 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <div id="toggle" class="toggle hidden" onclick="toggleSummary()">🛒 ملخص الطلب (<span id="toggleCount">0</span>)</div>
 <div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="actions" style="flex-wrap:wrap"><button class="btn-copy" onclick="copyOrder(true)">📋 نسخ بالسعر</button><button class="btn-copy" onclick="copyOrder(false)">📋 نسخ بدون سعر</button><button class="btn-wa" onclick="shareWA(true)">واتساب بالسعر</button><button class="btn-wa" onclick="shareWA(false)">واتساب بدون سعر</button><button class="btn-clear" onclick="clearOrder()">مسح</button></div></div>
 <div id="pkgModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="pkgTitle" style="font-size:12px">اختار نوع العبوة</h3><button onclick="closeModal('pkgModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div id="pkgProductInfo" style="font-size:10px;color:#4a4a4a;margin:4px 0"></div><div id="pkgGrid" class="pkg-grid"></div><div id="qtyControl" style="display:none;margin-top:10px;padding:8px;background:#fff;border:1.5px solid #e6dcc0;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px"><span>الكمية:</span><div style="display:flex;gap:8px;align-items:center"><button onclick="changePkgQty(-1)" style="width:26px;height:26px">-</button><span id="pkgQty">1</span><button onclick="changePkgQty(1)" style="width:26px;height:26px">+</button></div></div><div style="font-size:12px">الإجمالي: <b id="pkgTotalPrice"></b></div><button onclick="confirmAddPackage()" style="width:100%;padding:8px;background:#d9c49c;color:#3f7d32;border:none;border-radius:8px;margin-top:6px">+ أضف للطلب</button></div></div></div>
+<div id="substituteModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:12px">مفيش في المخزن؟ اختار صنف بديل</h3><button onclick="closeModal('substituteModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><input id="subSearch" placeholder="ابحث عن الصنف البديل بالاسم أو الكود..." oninput="renderSubstituteResults(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin:8px 0;font-size:12px"><div id="subResults" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:11px">اكتب على الأقل حرفين للبحث عن الصنف البديل</div></div></div>
 
 
 <div id="helpModal" class="modal"><div class="modal-box" style="max-width:500px">
@@ -283,6 +284,37 @@ const BAKHOOR_PACKAGES = [
 {id:'bakhoor_dozen', label:'دستة', factor:1},
 {id:'bakhoor_carton', label:'كرتونة (12 دستة)', factor:12},
 ];
+const PKG_TABLE_ROWS = [
+{label:'كيلو', silver:'silver_1000', pack:'pack_1000'},
+{label:'نص كيلو', silver:'silver_500', pack:'pack_500'},
+{label:'ربع كيلو', silver:'silver_250', pack:'pack_250'},
+{label:'100 جرام', silver:'silver_100', pack:'pack_100'},
+{label:'50 جرام', silver:'silver_50', pack:'pack_50'},
+{label:'5 كيلو', silver:'silver_5000', pack:'pack_5000'},
+{label:'25 كيلو', silver:'silver_25000', pack:null},
+];
+function buildPkgTable(p, disc, isRosy){
+  let html='<table style="width:100%;border-collapse:collapse;font-size:11px;text-align:center">';
+  html+='<thead><tr style="background:#f4ecd8"><th style="padding:6px;border:1px solid #e6dcc0">العبوة</th><th style="padding:6px;border:1px solid #e6dcc0">السلفر</th><th style="padding:6px;border:1px solid #e6dcc0">المفتوح</th></tr></thead><tbody>';
+  PKG_TABLE_ROWS.forEach(function(r){
+    html+='<tr><td style="padding:6px;border:1px solid #e6dcc0;font-weight:700">'+r.label+'</td>';
+    ['silver','pack'].forEach(function(col){
+      let pkgId=r[col];
+      let disallowed = pkgId && !isRosy && ['silver_50','silver_100','silver_250'].includes(pkgId);
+      if(!pkgId || disallowed){
+        html+='<td style="padding:6px;border:1px solid #e6dcc0;color:#bbb">-</td>';
+      } else {
+        let pkg=ALL_PACKAGES.find(function(x){ return x.id===pkgId; });
+        let base=Math.round(p.price*pkg.factor);
+        let fin=discPrice(base,disc);
+        html+='<td class="pkg-item" id="pkg-'+pkgId+'" onclick="selectPackage(\''+pkgId+'\')" style="padding:6px;border:1px solid #e6dcc0;cursor:pointer">'+fin.toLocaleString('en-US')+'</td>';
+      }
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
+}
 function parseDiscount(v){ if(!v) return 0; let s=String(v).trim().replace('%',''); let n=parseFloat(s); if(isNaN(n)) return 0; if(n>0&&n<1) n*=100; return Math.min(90,Math.max(0,n)); }
 function isMabakhirProduct(p){ return p.type==='مباخر' || p.brand==='مباخر'; }
 function isBakhoorProduct(p){ let b=(p.brand||'').trim(); let t=(p.type||'').trim(); return b==='خصال العود' || b==='بخور خصال العود' || b==='بخور' || t==='خصال العود' || t==='بخور خصال العود' || t==='بخور'; }
@@ -660,13 +692,10 @@ function openPackageSelector(code){
     return;
   }
   let isRosy=(p.brand||'').toUpperCase().includes('ROSY');
-  let packages=isRosy?ALL_PACKAGES:ALL_PACKAGES.filter(pkg=> !['silver_50','silver_100','silver_250'].includes(pkg.id));
   document.getElementById('pkgTitle').textContent='اختار العبوة - '+p.name;
   document.getElementById('pkgProductInfo').innerHTML=p.name+' - '+p.price.toLocaleString('en-US')+' LE';
   let grid=document.getElementById('pkgGrid');
-  let html='';
-  packages.forEach(pkg=>{ let base=Math.round(p.price*pkg.factor); let fin=discPrice(base,disc); html+='<div class="pkg-item" id="pkg-'+pkg.id+'" onclick="selectPackage(\''+pkg.id+'\')">'+pkg.label+'<br><b>'+fin.toLocaleString('en-US')+' LE</b></div>'; });
-  grid.innerHTML=html;
+  grid.innerHTML=buildPkgTable(p, disc, isRosy);
   document.getElementById('pkgModal').classList.add('open');
 }
 function selectPackage(pkgId){
@@ -709,8 +738,50 @@ function updateSummary(){
   let list=Object.values(order); let count=list.reduce((s,i)=>s+i.qty,0); let after=list.reduce((s,i)=>s+i.finalPrice*i.qty,0);
   document.getElementById('toggleCount').textContent=count; document.getElementById('countBadge').textContent=count; document.getElementById('countBadge').classList.toggle('hidden',count===0); document.getElementById('toggle').classList.toggle('hidden',count===0);
   document.getElementById('grandTotal').textContent=after.toLocaleString('en-US')+' LE';
-  let html=''; list.forEach(i=>{ html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e6dcc0;font-size:11px"><div>#'+i.code+' '+i.name+' ['+i.packageLabel+'] x'+i.qty+'</div><div>'+(i.finalPrice*i.qty).toLocaleString('en-US')+' LE <button onclick="removeItem(\''+i.code+'_'+i.packageId+'\')">×</button></div></div>'; });
+  let html=''; list.forEach(i=>{
+    let key=i.code+'_'+i.packageId;
+    let subNote=i.subName?'<div style="font-size:10px;color:#8a3350;margin-top:2px">بديل: '+i.subName+'</div>':'';
+    let subBtn=i.subName
+      ? '<button onclick="clearSubstitute(\''+key+'\')" title="إلغاء البديل" style="font-size:13px;background:none;border:none;cursor:pointer">↩️</button>'
+      : '<button onclick="openSubstituteSelector(\''+key+'\')" title="مفيش في المخزن - اختار بديل" style="font-size:13px;background:none;border:none;cursor:pointer">🔄</button>';
+    html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e6dcc0;font-size:11px"><div>#'+i.code+' '+i.name+' ['+i.packageLabel+'] x'+i.qty+subNote+'</div><div style="display:flex;gap:4px;align-items:center">'+(i.finalPrice*i.qty).toLocaleString('en-US')+' LE '+subBtn+'<button onclick="removeItem(\''+key+'\')">×</button></div></div>';
+  });
   document.getElementById('summaryList').innerHTML=html||'لا يوجد اختيارات';
+}
+let currentSubKey=null;
+function openSubstituteSelector(key){
+  if(!order[key]) return;
+  currentSubKey=key;
+  let el=document.getElementById('subSearch'); if(el) el.value='';
+  renderSubstituteResults('');
+  document.getElementById('substituteModal').classList.add('open');
+}
+function renderSubstituteResults(q){
+  q=(q||'').toLowerCase().trim();
+  let list = q.length<2 ? [] : PRODUCTS.filter(function(p){ return (p.code+' '+p.name+' '+(p.english||'')).toLowerCase().includes(q); }).slice(0,30);
+  let html = list.map(function(p){
+    return '<div class="pkg-item" style="text-align:right;cursor:pointer;display:flex;justify-content:space-between" onclick="chooseSubstitute(\''+p.code+'\')"><span>#'+p.code+' - '+p.name+'</span><b>'+(p.price||0).toLocaleString('en-US')+' LE</b></div>';
+  }).join('');
+  document.getElementById('subResults').innerHTML = html || (q.length<2 ? 'اكتب على الأقل حرفين للبحث عن الصنف البديل' : 'مفيش نتائج');
+}
+function chooseSubstitute(subCode){
+  let key=currentSubKey; if(!key || !order[key]) return;
+  let sub=PRODUCTS.find(function(x){ return String(x.code)===String(subCode); });
+  if(!sub) return;
+  let item=order[key];
+  if(item.origPrice===undefined){ item.origPrice=item.price; item.origFinalPrice=item.finalPrice; }
+  let disc=parseDiscount(sub.discount);
+  let base=Math.round((sub.price||0)*(item.packageFactor||1));
+  let fin=discPrice(base, disc);
+  item.subCode=sub.code; item.subName=sub.name; item.price=base; item.finalPrice=fin;
+  saveOrder();
+  closeModal('substituteModal');
+}
+function clearSubstitute(key){
+  let item=order[key]; if(!item || item.origPrice===undefined) return;
+  item.price=item.origPrice; item.finalPrice=item.origFinalPrice;
+  delete item.subCode; delete item.subName; delete item.origPrice; delete item.origFinalPrice;
+  saveOrder();
 }
 function toggleSummary(){ document.getElementById('summary').classList.toggle('open'); }
 function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(t==='discount'?'pillDiscount':'pillNew').classList.toggle('active',activePills[t]); applyFilters(); }
@@ -737,10 +808,11 @@ function buildOrderText(withPrice){
   list.forEach((i)=>{
     let fullCode=orderItemFullCode(i);
     let unitLabel=i.packageLabel||'';
+    let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
     if(withPrice){
-      txt+=fullCode+'\t'+i.name+'\t'+unitLabel+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
+      txt+=fullCode+'\t'+nameOut+'\t'+unitLabel+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
     } else {
-      txt+=fullCode+'\t'+i.name+'\t'+unitLabel+'\t'+i.qty+'\n';
+      txt+=fullCode+'\t'+nameOut+'\t'+unitLabel+'\t'+i.qty+'\n';
     }
   });
   txt+='———————————————————\n';
