@@ -288,6 +288,7 @@ const PKG_TABLE_ROWS = [
 {label:'كيلو', silver:'silver_1000', pack:'pack_1000'},
 {label:'نص كيلو', silver:'silver_500', pack:'pack_500'},
 {label:'ربع كيلو', silver:'silver_250', pack:'pack_250'},
+{label:'125 جرام', silver:null, pack:'pack_125'},
 {label:'100 جرام', silver:'silver_100', pack:'pack_100'},
 {label:'50 جرام', silver:'silver_50', pack:'pack_50'},
 {label:'5 كيلو', silver:'silver_5000', pack:'pack_5000'},
@@ -788,7 +789,7 @@ function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(
 function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder','fBakhoorType','fBurnDuration'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); updateBakhoorFilterVisibility(); applyFilters(); }
 const PKG_CODE_SUFFIX = {
   silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
-  pack_50:'/P50', pack_100:'/P100', pack_125:'/P125', pack_250:'/P250', pack_500:'/P500', pack_1000:'/P1', pack_5000:'/P5'
+  pack_50:'/P1', pack_100:'/P1', pack_125:'/P1', pack_250:'/P1', pack_500:'/P1', pack_1000:'/P1', pack_5000:'/P1'
 };
 function orderItemFullCode(i){ return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
 function buildOrderText(withPrice){
@@ -798,26 +799,27 @@ function buildOrderText(withPrice){
   let dateStr=now.toLocaleDateString('ar-EG')+' '+now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
   let custName=(document.getElementById('custName')||{}).value||'';
   let custPhone=(document.getElementById('custPhone')||{}).value||'';
+  const LRM='‎';
+  function ltr(s){ return LRM+s+LRM; }
   let txt='🛒 طلب زماني كات\n';
   txt+='📅 '+dateStr+'\n';
   txt+='👤 الاسم: '+custName+'\n';
   txt+='📱 الموبايل: '+custPhone+'\n';
   txt+='———————————————————\n';
-  if(withPrice){ txt+='الكود\tالصنف\tالوحدة\tالكمية\tالسعر\n'; }
-  else { txt+='الكود\tالصنف\tالوحدة\tالكمية\n'; }
   list.forEach((i)=>{
     let fullCode=orderItemFullCode(i);
-    let unitLabel=i.packageLabel||'';
     let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
+    let qtyOut=ltr(String(i.qty))+(i.packageLabel?(' '+i.packageLabel):'');
     if(withPrice){
-      txt+=fullCode+'\t'+nameOut+'\t'+unitLabel+'\t'+i.qty+'\t'+(i.finalPrice*i.qty).toLocaleString('en-US')+'\n';
+      let valOut=ltr((i.finalPrice*i.qty).toLocaleString('en-US')+' LE');
+      txt+=ltr(fullCode)+' | '+nameOut+' | '+qtyOut+' | '+valOut+'\n';
     } else {
-      txt+=fullCode+'\t'+nameOut+'\t'+unitLabel+'\t'+i.qty+'\n';
+      txt+=ltr(fullCode)+' | '+nameOut+' | '+qtyOut+'\n';
     }
   });
   txt+='———————————————————\n';
-  if(withPrice){ txt+='💰 الإجمالي: '+after.toLocaleString('en-US')+' LE\n'; }
-  txt+='عدد الأصناف: '+list.reduce((s,i)=>s+i.qty,0);
+  if(withPrice){ txt+='💰 الإجمالي: '+ltr(after.toLocaleString('en-US')+' LE')+'\n'; }
+  txt+='عدد الأصناف: '+ltr(String(list.reduce((s,i)=>s+i.qty,0)));
   return txt;
 }
 function validateCustomerInfo(){
