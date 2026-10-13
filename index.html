@@ -281,7 +281,6 @@ const ALL_PACKAGES = [
 {id:'pack_5000', label:'مفتوح 5 ك', factor:5, type:'pack'},
 ];
 const BAKHOOR_PACKAGES = [
-{id:'bakhoor_piece', label:'قطعة', factor:1/12, noPrice:true},
 {id:'bakhoor_dozen', label:'دستة', factor:1},
 {id:'bakhoor_carton', label:'كرتونة (12 دستة)', factor:12},
 ];
@@ -834,6 +833,24 @@ function buildOrderText(withPrice){
   txt+='عدد الأصناف: '+ltr(String(list.reduce((s,i)=>s+i.qty,0)));
   return txt;
 }
+function excelUnitLabel(i){
+  let lbl=i.packageLabel||'';
+  return lbl.replace(/^سلفر\s+/,'').replace(/^مفتوح\s+/,'');
+}
+function buildExcelOrderText(withPrice){
+  let list=Object.values(order);
+  let header='كود الصنف\tاسم الصنف\tالوحدة\tالكمية'+(withPrice?'\tالقيمة':'');
+  let rows=[header];
+  list.forEach(function(i){
+    let fullCode=orderItemFullCode(i);
+    let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
+    let unitOut=excelUnitLabel(i);
+    let row=fullCode+'\t'+nameOut+'\t'+unitOut+'\t'+i.qty;
+    if(withPrice){ row+='\t'+(i.noPrice?'':(i.finalPrice*i.qty)); }
+    rows.push(row);
+  });
+  return rows.join('\n');
+}
 function validateCustomerInfo(){
   let nameEl=document.getElementById('custName');
   let phoneEl=document.getElementById('custPhone');
@@ -884,7 +901,7 @@ function copyOrder(withPrice){
   if(list.length===0){ alert('مفيش حاجة'); return; }
   if(!validateCustomerInfo()) return;
   trackShare();
-  let txt=buildOrderText(withPrice);
+  let txt=buildExcelOrderText(withPrice);
   copyToClipboard(txt, function(ok){
     if(ok){ alert('تم نسخ الطلب ✅'); }
     else { alert('مقدرتش أنسخ تلقائي - هفتح نافذة تقدر تنسخ منها يدوي'); showManualCopyBox(txt); }
