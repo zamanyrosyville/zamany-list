@@ -835,7 +835,7 @@ function toggleSummary(){ document.getElementById('summary').classList.toggle('o
 function togglePill(t){ activePills[t]=!activePills[t]; document.getElementById(t==='discount'?'pillDiscount':'pillNew').classList.toggle('active',activePills[t]); applyFilters(); }
 function clearFilters(){ activeCategory='all'; let mb=document.getElementById('pillMabakhir'); if(mb) mb.classList.remove('active'); let ob=document.getElementById('pillOils'); if(ob) ob.classList.remove('active'); let bb=document.getElementById('pillBakhoor'); if(bb) bb.classList.remove('active'); document.getElementById('search').value=''; ['fHouse','fBrand','fType','fFamily','fName','fPrice','sortOrder','fBakhoorType','fBurnDuration'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; }); activePills={discount:false,new:false}; let pd=document.getElementById('pillDiscount'); if(pd) pd.classList.remove('active'); let pn=document.getElementById('pillNew'); if(pn) pn.classList.remove('active'); updateBakhoorFilterVisibility(); applyFilters(); }
 const PKG_CODE_SUFFIX = {
-  silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
+  silver_50:'/50', silver_100:'/100', silver_250:'/4', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
   pack_50:'/P1', pack_100:'/P1', pack_125:'/P1', pack_250:'/P1', pack_500:'/P1', pack_1000:'/P1', pack_5000:'/P1'
 };
 function orderItemFullCode(i){ if(i.packageId==='pack_custom') return i.code+'/P1'; return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
