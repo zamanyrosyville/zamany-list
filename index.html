@@ -653,11 +653,13 @@ let currentSelectedPkgId=null;
 let currentPkgQty=1;
 let currentPkgFin=0;
 let currentPkgNoPrice=false;
+let currentCustomGrams=null;
 function openPackageSelector(code){
   let p=PRODUCTS.find(x=>String(x.code)===String(code)); if(!p) return;
   trackView(p.code, p.type);
   currentPkgProduct=p;
   currentSelectedPkgId=null;
+  currentCustomGrams=null;
   currentPkgQty=1;
   let qtyCtrl=document.getElementById('qtyControl');
   if(qtyCtrl) qtyCtrl.style.display='none';
@@ -701,8 +703,33 @@ function openPackageSelector(code){
   document.getElementById('pkgTitle').textContent='اختار العبوة - '+p.name;
   document.getElementById('pkgProductInfo').innerHTML=p.name+' - '+p.price.toLocaleString('en-US')+' LE';
   let grid=document.getElementById('pkgGrid');
-  grid.innerHTML=buildPkgTable(p, disc, isRosy);
+  grid.innerHTML=buildPkgTable(p, disc, isRosy)+'<div style="margin-top:8px;padding:8px;border-top:1px dashed #e6dcc0"><div style="font-size:11px;margin-bottom:4px">وزن حر (مفتوح) - اكتب بالجرام</div><div style="display:flex;gap:6px"><input id="customOpenGramsInput" type="number" min="1" placeholder="مثلاً 60" style="flex:1;padding:6px;border:1.5px solid #e6dcc0;border-radius:6px;font-size:12px"><button onclick="applyCustomOpenWeight()" class="btn-copy" style="padding:6px 10px;font-size:11px">تطبيق</button></div></div>';
   document.getElementById('pkgModal').classList.add('open');
+}
+function customOpenWeightLabel(grams){
+  if(grams<1000) return grams+' جرام';
+  let boxes=Math.round((grams/1000)*100)/100;
+  let str=boxes.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+  return str+' عبوة';
+}
+function applyCustomOpenWeight(){
+  if(!currentPkgProduct) return;
+  let input=document.getElementById('customOpenGramsInput');
+  let grams=parseFloat(input?input.value:'');
+  if(!grams || grams<=0){ alert('اكتب وزن بالجرام أكبر من صفر'); return; }
+  let p=currentPkgProduct; let disc=parseDiscount(p.discount);
+  currentSelectedPkgId='pack_custom';
+  currentCustomGrams=grams;
+  currentPkgQty=1;
+  currentPkgNoPrice=false;
+  document.querySelectorAll('.pkg-item').forEach(el=>el.style.borderColor='#f4ecd8');
+  let factor=grams/1000;
+  let base=Math.round(p.price*factor);
+  let fin=discPrice(base,disc);
+  currentPkgFin=fin;
+  let qc=document.getElementById('qtyControl'); if(qc) qc.style.display='block';
+  document.getElementById('pkgQty').textContent='1';
+  document.getElementById('pkgTotalPrice').textContent=fin.toLocaleString('en-US')+' LE';
 }
 function selectPackage(pkgId){
   if(!currentPkgProduct) return;
@@ -736,8 +763,13 @@ function confirmAddPackage(){
     let pkg=BAKHOOR_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return;
     noPriceItem=!!pkg.noPrice;
     base=noPriceItem?0:Math.round(p.price*pkg.factor); fin=noPriceItem?0:discPrice(base,disc); label=pkg.label; factor=pkg.factor;
+  } else if(currentSelectedPkgId==='pack_custom'){
+    if(!currentCustomGrams) return;
+    factor=currentCustomGrams/1000;
+    base=Math.round(p.price*factor); fin=discPrice(base,disc);
+    label=customOpenWeightLabel(currentCustomGrams);
   } else { let pkg=ALL_PACKAGES.find(x=>x.id===currentSelectedPkgId); if(!pkg) return; base=Math.round(p.price*pkg.factor); fin=discPrice(base,disc); label=pkg.label; factor=pkg.factor; }
-  let key=p.code+'_'+currentSelectedPkgId;
+  let key=currentSelectedPkgId==='pack_custom' ? (p.code+'_pack_custom_'+currentCustomGrams) : (p.code+'_'+currentSelectedPkgId);
   trackSelect(p.code);
   if(order[key]) order[key].qty+=currentPkgQty; else order[key]={code:p.code,name:p.name,brand:p.brand,type:p.type,family:p.family,ingredients:p.ingredients,packageId:currentSelectedPkgId,packageLabel:label,packageFactor:factor,price:base,finalPrice:fin,qty:currentPkgQty,noPrice:noPriceItem};
   saveOrder(); closeModal('pkgModal');
@@ -755,7 +787,7 @@ function updateSummary(){
     let subBtn=i.subName
       ? '<button onclick="clearSubstitute(\''+key+'\')" title="إلغاء البديل" style="font-size:13px;background:none;border:none;cursor:pointer">↩️</button>'
       : '<button onclick="openSubstituteSelector(\''+key+'\')" title="مفيش في المخزن - اختار بديل" style="font-size:13px;background:none;border:none;cursor:pointer">🔄</button>';
-    let priceOut=i.noPrice?'بدون سعر':(i.finalPrice*i.qty).toLocaleString('en-US')+' LE';
+    let priceOut=(i.finalPrice*i.qty).toLocaleString('en-US')+' LE';
     html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e6dcc0;font-size:11px"><div>#'+i.code+' '+i.name+' ['+i.packageLabel+'] x'+i.qty+subNote+'</div><div style="display:flex;gap:4px;align-items:center">'+priceOut+' '+subBtn+'<button onclick="removeItem(\''+key+'\')">×</button></div></div>';
   });
   document.getElementById('summaryList').innerHTML=html||'لا يوجد اختيارات';
@@ -802,7 +834,7 @@ const PKG_CODE_SUFFIX = {
   silver_50:'/50', silver_100:'/100', silver_250:'/250', silver_500:'/2', silver_1000:'/1', silver_5000:'/5', silver_25000:'/25',
   pack_50:'/P1', pack_100:'/P1', pack_125:'/P1', pack_250:'/P1', pack_500:'/P1', pack_1000:'/P1', pack_5000:'/P1'
 };
-function orderItemFullCode(i){ return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
+function orderItemFullCode(i){ if(i.packageId==='pack_custom') return i.code+'/P1'; return i.code+(PKG_CODE_SUFFIX[i.packageId]||''); }
 function buildOrderText(withPrice){
   let list=Object.values(order);
   let after=list.reduce((s,i)=>s+i.finalPrice*i.qty,0);
@@ -834,6 +866,7 @@ function buildOrderText(withPrice){
   return txt;
 }
 function excelUnitLabel(i){
+  if(String(i.packageId||'').indexOf('silver_')===0) return 'عبوة';
   let lbl=i.packageLabel||'';
   return lbl.replace(/^سلفر\s+/,'').replace(/^مفتوح\s+/,'');
 }
@@ -846,7 +879,7 @@ function buildExcelOrderText(withPrice){
     let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
     let unitOut=excelUnitLabel(i);
     let row=fullCode+'\t'+nameOut+'\t'+unitOut+'\t'+i.qty;
-    if(withPrice){ row+='\t'+(i.noPrice?'':(i.finalPrice*i.qty)); }
+    if(withPrice){ row+='\t'+(i.finalPrice*i.qty); }
     rows.push(row);
   });
   return rows.join('\n');
