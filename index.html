@@ -703,14 +703,18 @@ function openPackageSelector(code){
   document.getElementById('pkgTitle').textContent='اختار العبوة - '+p.name;
   document.getElementById('pkgProductInfo').innerHTML=p.name+' - '+p.price.toLocaleString('en-US')+' LE';
   let grid=document.getElementById('pkgGrid');
-  grid.innerHTML=buildPkgTable(p, disc, isRosy)+'<div style="margin-top:8px;padding:8px;border-top:1px dashed #e6dcc0"><div style="font-size:11px;margin-bottom:4px">وزن حر (مفتوح) - اكتب بالجرام</div><div style="display:flex;gap:6px"><input id="customOpenGramsInput" type="number" min="1" placeholder="مثلاً 60" style="flex:1;padding:6px;border:1.5px solid #e6dcc0;border-radius:6px;font-size:12px"><button onclick="applyCustomOpenWeight()" class="btn-copy" style="padding:6px 10px;font-size:11px">تطبيق</button></div></div>';
+  grid.innerHTML=buildPkgTable(p, disc, isRosy)+'<div style="margin-top:8px;padding:8px;border-top:1px dashed #e6dcc0"><div style="font-size:11px;margin-bottom:4px">وزن حر (مفتوح) - اكتب بالجرام</div><div style="display:flex;gap:6px;align-items:center"><input id="customOpenGramsInput" type="number" min="1" max="9999" maxlength="4" placeholder="60" oninput="this.value=this.value.slice(0,4)" style="width:64px;padding:6px;border:1.5px solid #e6dcc0;border-radius:6px;font-size:12px"><button onclick="applyCustomOpenWeight()" class="btn-copy" style="padding:6px 10px;font-size:11px">تطبيق</button></div></div>';
   document.getElementById('pkgModal').classList.add('open');
 }
-function customOpenWeightLabel(grams){
-  if(grams<1000) return grams+' جرام';
+function gramsToUnitQty(grams){
+  if(grams<1000) return {unit:'جرام', qty:grams};
   let boxes=Math.round((grams/1000)*100)/100;
   let str=boxes.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
-  return str+' عبوة';
+  return {unit:'عبوة', qty:str};
+}
+function customOpenWeightLabel(grams){
+  let uq=gramsToUnitQty(grams);
+  return uq.qty+' '+uq.unit;
 }
 function applyCustomOpenWeight(){
   if(!currentPkgProduct) return;
@@ -865,10 +869,14 @@ function buildOrderText(withPrice){
   txt+='عدد الأصناف: '+ltr(String(list.reduce((s,i)=>s+i.qty,0)));
   return txt;
 }
-function excelUnitLabel(i){
-  if(String(i.packageId||'').indexOf('silver_')===0) return 'عبوة';
-  let lbl=i.packageLabel||'';
-  return lbl.replace(/^سلفر\s+/,'').replace(/^مفتوح\s+/,'');
+function excelUnitAndQty(i){
+  let pid=String(i.packageId||'');
+  if(pid.indexOf('silver_')===0) return {unit:'عبوة', qty:i.qty};
+  if(pid==='pack_custom' || pid.indexOf('pack_')===0){
+    let grams=Math.round((i.packageFactor||0)*1000*i.qty);
+    return gramsToUnitQty(grams);
+  }
+  return {unit:i.packageLabel||'', qty:i.qty};
 }
 function buildExcelOrderText(withPrice){
   let list=Object.values(order);
@@ -877,8 +885,8 @@ function buildExcelOrderText(withPrice){
   list.forEach(function(i){
     let fullCode=orderItemFullCode(i);
     let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
-    let unitOut=excelUnitLabel(i);
-    let row=fullCode+'\t'+nameOut+'\t'+unitOut+'\t'+i.qty;
+    let uq=excelUnitAndQty(i);
+    let row=fullCode+'\t'+nameOut+'\t'+uq.unit+'\t'+uq.qty;
     if(withPrice){ row+='\t'+(i.finalPrice*i.qty); }
     rows.push(row);
   });
