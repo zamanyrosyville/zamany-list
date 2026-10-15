@@ -283,6 +283,7 @@ const ALL_PACKAGES = [
 const BAKHOOR_PACKAGES = [
 {id:'bakhoor_dozen', label:'دستة', factor:1},
 {id:'bakhoor_carton', label:'كرتونة (12 دستة)', factor:12},
+{id:'bakhoor_piece', label:'قطعة', factor:1, noPrice:true},
 ];
 const PKG_TABLE_ROWS = [
 {label:'كيلو', silver:'silver_1000', pack:'pack_1000'},
@@ -791,7 +792,7 @@ function updateSummary(){
     let subBtn=i.subName
       ? '<button onclick="clearSubstitute(\''+key+'\')" title="إلغاء البديل" style="font-size:13px;background:none;border:none;cursor:pointer">↩️</button>'
       : '<button onclick="openSubstituteSelector(\''+key+'\')" title="مفيش في المخزن - اختار بديل" style="font-size:13px;background:none;border:none;cursor:pointer">🔄</button>';
-    let priceOut=(i.finalPrice*i.qty).toLocaleString('en-US')+' LE';
+    let priceOut=i.noPrice===true?'بدون سعر':(i.finalPrice*i.qty).toLocaleString('en-US')+' LE';
     html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e6dcc0;font-size:11px"><div>#'+i.code+' '+i.name+' ['+i.packageLabel+'] x'+i.qty+subNote+'</div><div style="display:flex;gap:4px;align-items:center">'+priceOut+' '+subBtn+'<button onclick="removeItem(\''+key+'\')">×</button></div></div>';
   });
   document.getElementById('summaryList').innerHTML=html||'لا يوجد اختيارات';
@@ -858,7 +859,7 @@ function buildOrderText(withPrice){
     let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
     let qtyOut=ltr(String(i.qty))+(i.packageLabel?(' '+i.packageLabel):'');
     if(withPrice){
-      let valOut=ltr((i.finalPrice*i.qty).toLocaleString('en-US')+' LE');
+      let valOut=i.noPrice===true?'بدون سعر':ltr((i.finalPrice*i.qty).toLocaleString('en-US')+' LE');
       txt+=ltr(fullCode)+' | '+nameOut+' | '+qtyOut+' | '+valOut+'\n';
     } else {
       txt+=ltr(fullCode)+' | '+nameOut+' | '+qtyOut+'\n';
@@ -887,7 +888,7 @@ function buildExcelOrderText(withPrice){
     let nameOut=i.subName?(i.name+' (بديل: '+i.subName+')'):i.name;
     let uq=excelUnitAndQty(i);
     let row=fullCode+'\t'+nameOut+'\t'+uq.unit+'\t'+uq.qty;
-    if(withPrice){ row+='\t'+(i.finalPrice*i.qty); }
+    if(withPrice){ row+='\t'+(i.noPrice===true?'بدون سعر':(i.finalPrice*i.qty)); }
     rows.push(row);
   });
   return rows.join('\n');
