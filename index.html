@@ -2086,7 +2086,7 @@ function driverCard(d,FV){
   <label>الوقت<input type="time" name="time"></label>
   <div class="dp-picker" data-dp-picker data-route="[]"><b>مسار المشوار — اضغط الأماكن بالترتيب</b>
   <div class="fl-checks">${(FV.places||[]).filter(p=>p.isActive!==false).map(p=>`<button type="button" class="soft-button dp-chip" data-dp="pick" data-n="${esc(p.name)}">${esc(p.name)}</button>`).join('')||'<small>أضف الأماكن من تبويب «الأماكن»</small>'}</div>
-  <div class="fl-actions"><input data-dp-extra placeholder="نقطة أخرى غير موجودة بالقائمة" list="dpPlaces" autocomplete="off"><button type="button" class="soft-button" data-dp="pickextra">إضافة</button><button type="button" class="soft-button" data-dp="pickundo">↩ تراجع</button><button type="button" class="soft-button" data-dp="pickclear">مسح</button></div>
+  <div class="fl-actions"><input data-dp-extra placeholder="اكتب مكانًا جديدًا (بيتحفظ في الأماكن تلقائيًا)" list="dpPlaces" autocomplete="off"><button type="button" class="soft-button" data-dp="pickextra">إضافة</button><button type="button" class="soft-button" data-dp="pickundo">↩ تراجع</button><button type="button" class="soft-button" data-dp="pickclear">مسح</button></div>
   <div class="dp-route" data-dp-route><small>لم تُختر أي نقطة بعد</small></div><input type="hidden" name="route" value="[]"></div>
   <label>الأصناف والكميات (سطر لكل صنف)<textarea name="itemsText" rows="2"></textarea></label>
   <label>بدل سفر (اختياري)<input type="number" name="allowance" min="0" inputmode="decimal"></label>
@@ -2208,6 +2208,17 @@ document.addEventListener('click',async e=>{
       await col('dispatch').doc(doc.id).update({items});toast('تم تحديث الحالة');await loadMine(true)}
   }catch(x){toast('تعذر التنفيذ — '+((x&&x.code)||x||''))}
 });
+async function saveNewPlace(name,box){
+  try{
+    const FV=FVref||{};if(!(FV.places)||FV.places.some(p=>p.name===name))return;
+    const can=isAdminUser()||currentProfile?.role==='salesmanager'||!!(P().fleet);if(!can)return;
+    const ref=await col('places').add({organizationId:'default',name,kind:'customer',note:'',updatedAt:new Date().toISOString()});
+    FV.places.push({id:ref.id,organizationId:'default',name,kind:'customer',note:''});
+    const holder=box.querySelector('.fl-checks');
+    if(holder&&!holder.querySelector(`[data-n="${name.replace(/"/g,'')}"]`)){const bt=document.createElement('button');bt.type='button';bt.className='soft-button dp-chip';bt.dataset.dp='pick';bt.dataset.n=name;bt.textContent=name;holder.appendChild(bt)}
+    toast('تم حفظ «'+name+'» في قائمة الأماكن');
+  }catch(e){}
+}
 function pickAction(b){
   const box=b.closest('[data-dp-picker]');if(!box)return;
   let r=[];try{r=JSON.parse(box.dataset.route||'[]')}catch(x){}
@@ -2215,7 +2226,7 @@ function pickAction(b){
   if(a==='pick')r.push(b.dataset.n);
   else if(a==='pickundo')r.pop();
   else if(a==='pickclear')r=[];
-  else if(a==='pickextra'){const i=box.querySelector('[data-dp-extra]');const v=(i.value||'').trim();if(!v)return;r.push(v);i.value=''}
+  else if(a==='pickextra'){const i=box.querySelector('[data-dp-extra]');const v=(i.value||'').trim();if(!v)return;r.push(v);i.value='';saveNewPlace(v,box)}
   else if(a==='pickrm'){r.splice(Number(b.dataset.i),1)}
   box.dataset.route=JSON.stringify(r);
   box.querySelector('input[name=route]').value=JSON.stringify(r);
