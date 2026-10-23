@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zamanycat</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#3f7d32"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="زماني"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
 // زرار ليلي نهاري - منفصل تماما عن باقي الكود عشان يشتغل حتى لو في خطأ
 var isDarkMode = false;
@@ -147,6 +148,7 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 </div>
 <div id="toggle" class="toggle hidden" onclick="toggleSummary()">🛒 ملخص الطلب (<span id="toggleCount">0</span>)</div>
 <div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="priceMode"><button id="pmWith" onclick="setPriceMode(true)">بالسعر</button><button id="pmWithout" onclick="setPriceMode(false)">بدون سعر</button></div><div class="actions"><button class="btn-copy" onclick="copyOrder(sendWithPrice)">📋 نسخ</button><button class="btn-wa" onclick="shareWA(sendWithPrice)">واتساب</button></div><div style="text-align:center;margin-top:8px"><button class="btn-clear" onclick="clearOrder()" style="padding:4px 14px;border-radius:8px;font-size:10px;color:#888;cursor:pointer">مسح الطلب</button></div></div>
+<button id="installBtn" onclick="pwaInstall()" style="display:none;position:fixed;top:8px;left:8px;z-index:50;padding:6px 10px;border:none;border-radius:16px;background:#3f7d32;color:#fff;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer">📲 ثبّت التطبيق</button>
 <div id="pkgModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="pkgTitle" style="font-size:12px">اختار نوع العبوة</h3><button onclick="closeModal('pkgModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div id="pkgProductInfo" style="font-size:10px;color:#4a4a4a;margin:4px 0"></div><div id="pkgGrid" class="pkg-grid"></div><div id="qtyControl" style="display:none;margin-top:10px;padding:8px;background:#fff;border:1.5px solid #e6dcc0;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px"><span>الكمية:</span><div style="display:flex;gap:8px;align-items:center"><button onclick="changePkgQty(-1)" style="width:26px;height:26px">-</button><span id="pkgQty">1</span><button onclick="changePkgQty(1)" style="width:26px;height:26px">+</button></div></div><div style="font-size:12px">الإجمالي: <b id="pkgTotalPrice"></b></div><button onclick="confirmAddPackage()" style="width:100%;padding:8px;background:#d9c49c;color:#3f7d32;border:none;border-radius:8px;margin-top:6px">+ أضف للطلب</button></div></div></div>
 <div id="substituteModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:12px">مفيش في المخزن؟ اختار صنف بديل</h3><button onclick="closeModal('substituteModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><input id="subSearch" placeholder="ابحث عن الصنف البديل بالاسم أو الكود..." oninput="renderSubstituteResults(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin:8px 0;font-size:12px"><div id="subResults" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:11px">اكتب على الأقل حرفين للبحث عن الصنف البديل</div></div></div>
 
@@ -938,6 +940,20 @@ function fallbackCopyToClipboard(text,onDone){
     if(onDone) onDone(ok);
   }catch(e){ if(onDone) onDone(false); }
 }
+/* ---- تثبيت التطبيق على الموبايل (PWA) ---- */
+let deferredInstall=null;
+function pwaIsStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }
+function pwaShowBtn(){ let b=document.getElementById('installBtn'); if(b&&!pwaIsStandalone()) b.style.display='block'; }
+function pwaInstall(){
+  if(deferredInstall){ deferredInstall.prompt(); deferredInstall.userChoice.finally(function(){ deferredInstall=null; let b=document.getElementById('installBtn'); if(b) b.style.display='none'; }); return; }
+  alert('على الآيفون: دوس زرار المشاركة (المربع والسهم) في سفاري، وبعدين «إضافة إلى الشاشة الرئيسية». على الأندرويد: من قايمة المتصفح (⋮) اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
+}
+try{
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferredInstall=e; pwaShowBtn(); });
+  window.addEventListener('appinstalled',function(){ let b=document.getElementById('installBtn'); if(b) b.style.display='none'; });
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)) window.addEventListener('load',pwaShowBtn);
+  if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js').catch(function(){});
+}catch(e){}
 let sendWithPrice=true;
 try{ sendWithPrice=localStorage.getItem('zamany_send_price')!=='0'; }catch(e){}
 function setPriceMode(v){
