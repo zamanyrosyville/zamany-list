@@ -147,7 +147,7 @@ body{background:#fff8e7 !important;color:#3d2b0a !important}
 <div style="text-align:center;margin:10px"><button id="loadMoreBtn" class="pill" onclick="loadMore()" style="padding:10px 20px;display:none">عرض المزيد</button></div>
 </div>
 <div id="toggle" class="toggle hidden" onclick="toggleSummary()">🛒 ملخص الطلب (<span id="toggleCount">0</span>)</div>
-<div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="priceMode"><button id="pmWith" onclick="setPriceMode(true)">بالسعر</button><button id="pmWithout" onclick="setPriceMode(false)">بدون سعر</button></div><div class="actions"><button class="btn-copy" onclick="copyOrder(sendWithPrice)">📋 نسخ</button><button class="btn-wa" onclick="shareWA(sendWithPrice)">واتساب</button></div><div id="staffRow" style="display:none;margin-top:6px"><button onclick="sendToOrders()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#1f7a6b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">➕ ابعت لتطبيق الأوردرات</button></div><div style="text-align:center;margin-top:8px"><button class="btn-clear" onclick="clearOrder()" style="padding:4px 14px;border-radius:8px;font-size:10px;color:#888;cursor:pointer">مسح الطلب</button></div></div>
+<div id="summary" class="summary"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>ملخص الاختيارات</strong><button onclick="toggleSummary()" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"><input id="custName" type="text" placeholder="الاسم بالكامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit"><input id="custPhone" type="tel" placeholder="رقم الموبايل كامل" style="width:100%;padding:8px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:12px;font-family:inherit;direction:ltr;text-align:right"></div><div id="summaryList"></div><div class="totals"><div><span>قبل الخصم</span><span id="subTotalBefore" class="en">0 LE</span></div><div><span style="color:#c62828">خصم</span><span id="totalItemDiscount" class="en" style="color:#c62828">0</span></div><div class="total"><span>النهائي</span><span id="grandTotal" class="en">0 LE</span></div></div><div class="priceMode"><button id="pmWith" onclick="setPriceMode(true)">بالسعر</button><button id="pmWithout" onclick="setPriceMode(false)">بدون سعر</button></div><div class="actions"><button class="btn-copy" onclick="copyOrder(sendWithPrice)">📋 نسخ</button><button class="btn-wa" onclick="shareWA(sendWithPrice)">واتساب</button></div><div id="staffLock" style="text-align:center;margin-top:6px"><button onclick="staffLogin()" style="padding:4px 12px;border:none;background:transparent;color:#999;font-size:10px;cursor:pointer;font-family:inherit">🔒 دخول الموظفين</button></div><div id="staffRow" style="display:none;margin-top:6px"><div style="text-align:center;font-size:10px;color:#888;margin-bottom:4px"><span id="staffWho"></span><a href="#" onclick="staffLogout();return false" style="color:#888">خروج الموظف</a></div><button onclick="sendToOrders()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#1f7a6b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">➕ ابعت لتطبيق الأوردرات</button></div><div style="text-align:center;margin-top:8px"><button class="btn-clear" onclick="clearOrder()" style="padding:4px 14px;border-radius:8px;font-size:10px;color:#888;cursor:pointer">مسح الطلب</button></div></div>
 <button id="installBtn" onclick="pwaInstall()" style="display:none;position:fixed;top:8px;left:8px;z-index:50;padding:6px 10px;border:none;border-radius:16px;background:#3f7d32;color:#fff;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer">📲 ثبّت التطبيق</button>
 <div id="pkgModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="pkgTitle" style="font-size:12px">اختار نوع العبوة</h3><button onclick="closeModal('pkgModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><div id="pkgProductInfo" style="font-size:10px;color:#4a4a4a;margin:4px 0"></div><div id="pkgGrid" class="pkg-grid"></div><div id="qtyControl" style="display:none;margin-top:10px;padding:8px;background:#fff;border:1.5px solid #e6dcc0;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px"><span>الكمية:</span><div style="display:flex;gap:8px;align-items:center"><button onclick="changePkgQty(-1)" style="width:26px;height:26px">-</button><span id="pkgQty">1</span><button onclick="changePkgQty(1)" style="width:26px;height:26px">+</button></div></div><div style="font-size:12px">الإجمالي: <b id="pkgTotalPrice"></b></div><button onclick="confirmAddPackage()" style="width:100%;padding:8px;background:#d9c49c;color:#3f7d32;border:none;border-radius:8px;margin-top:6px">+ أضف للطلب</button></div></div></div>
 <div id="substituteModal" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:12px">مفيش في المخزن؟ اختار صنف بديل</h3><button onclick="closeModal('substituteModal')" style="width:24px;height:24px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button></div><input id="subSearch" placeholder="ابحث عن الصنف البديل بالاسم أو الكود..." oninput="renderSubstituteResults(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin:8px 0;font-size:12px"><div id="subResults" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:11px">اكتب على الأقل حرفين للبحث عن الصنف البديل</div></div></div>
@@ -966,17 +966,60 @@ function setPriceMode(v){
 setPriceMode(sendWithPrice);
 /* ---- ربط بتطبيق الأوردرات (للتيلي سيلز بس): الزرار بيظهر لو الليستة اتفتحت مرة بـ ?staff=1 ---- */
 const ORDERS_APP_URL='https://zamanyrosyville.github.io/ordersfollow/';
+/* ---- دخول الموظفين: تليفون + رقم سري (الحسابات بيضيفها المدير في تطبيق الأوردرات). كود الطوارئ اختياري: سيبه فاضي '' عشان يتقفل. ---- */
+const STAFF_CODE='4710';
+const ORD_CFG={apiKey:"AIzaSyAnhSG87VR9Uuev-Ybog1vMArwGPO-xgBE",authDomain:"follow-telesales.firebaseapp.com",projectId:"follow-telesales",appId:"1:93502420574:web:cfad17f249e5876e34e6cf"};
+function phNorm(v){ return String(v||'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/\D/g,'').slice(-10); }
+async function zlHash(phone,pin){
+  let enc=new TextEncoder(),key=await crypto.subtle.importKey('raw',enc.encode(phNorm(phone)+'|'+String(pin||'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).trim()),'PBKDF2',false,['deriveBits']);
+  let bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode('zamany-list-v1'),iterations:100000,hash:'SHA-256'},key,256);
+  return Array.from(new Uint8Array(bits)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+async function staffCheck(list,phone,pin){ let h=await zlHash(phone,pin); let m=(list||[]).find(function(x){return x.h===h;}); return m?m.n:null; }
+async function staffFetchList(){
+  let app; try{ app=firebase.app('orders'); }catch(e){ app=firebase.initializeApp(ORD_CFG,'orders'); }
+  let d=await app.firestore().collection('public').doc('staffList').get();
+  return d.exists?(d.data().list||[]):[];
+}
 function staffInit(){
-  try{ let q=new URLSearchParams(location.search); if(q.get('staff')==='1') localStorage.setItem('zamany_staff','1'); if(q.get('staff')==='0') localStorage.removeItem('zamany_staff'); }catch(e){}
-  let on=false; try{ on=localStorage.getItem('zamany_staff')==='1'; }catch(e){}
+  try{ let q=new URLSearchParams(location.search); if(q.get('staff')==='0'){ localStorage.removeItem('zamany_staff'); localStorage.removeItem('zamany_staff_name'); } }catch(e){}
+  let on=false,nm=''; try{ on=localStorage.getItem('zamany_staff')==='1'; nm=localStorage.getItem('zamany_staff_name')||''; }catch(e){}
   let r=document.getElementById('staffRow'); if(r) r.style.display=on?'block':'none';
+  let l=document.getElementById('staffLock'); if(l) l.style.display=on?'none':'block';
+  let w=document.getElementById('staffWho'); if(w) w.textContent=nm?('👤 '+nm+' · '):'';
 }
 window.addEventListener('load',staffInit);
+function staffLogout(){ try{ localStorage.removeItem('zamany_staff'); localStorage.removeItem('zamany_staff_name'); }catch(e){} staffInit(); }
+function staffLogin(){
+  let old=document.getElementById('staffModal'); if(old) old.remove();
+  let d=document.createElement('div'); d.id='staffModal'; d.className='modal open';
+  d.innerHTML='<div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="font-size:14px">🔒 دخول الموظفين</h3><button onclick="document.getElementById(\'staffModal\').remove()" style="width:26px;height:26px;padding:0;background:#fff;color:#c0392b;border:2px solid #c0392b;border-radius:50%;font-size:15px;font-weight:700;cursor:pointer">×</button></div><input id="stPh" type="tel" inputmode="tel" placeholder="رقم التليفون" style="width:100%;padding:10px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:6px;direction:ltr;text-align:right"><input id="stPin" type="password" placeholder="الرقم السري" style="width:100%;padding:10px;border:1.5px solid #e6dcc0;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:8px"><div id="stMsg" style="font-size:12px;color:#c0392b;min-height:16px"></div><button id="stGo" onclick="staffDoLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#1f7a6b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">دخول</button></div>';
+  document.body.appendChild(d);
+}
+async function staffDoLogin(){
+  let ph=document.getElementById('stPh').value.trim(),pin=document.getElementById('stPin').value.trim(),msg=document.getElementById('stMsg'),go=document.getElementById('stGo');
+  msg.textContent='';
+  if(!pin){ msg.textContent='اكتب الرقم السري'; return; }
+  let name=null;
+  if(!ph){
+    if(STAFF_CODE && pin.replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);})===STAFF_CODE) name='';
+    else { msg.textContent='اكتب رقم التليفون'; return; }
+  } else {
+    if(phNorm(ph).length!==10){ msg.textContent='رقم التليفون لازم يبقى 11 رقم'; return; }
+    go.disabled=true; go.textContent='جاري التحقق...';
+    try{ name=await staffCheck(await staffFetchList(),ph,pin); }
+    catch(e){ msg.textContent='تعذر التحقق دلوقتي. تأكد من النت وإن المدير نشر القواعد الجديدة.'; go.disabled=false; go.textContent='دخول'; return; }
+    go.disabled=false; go.textContent='دخول';
+    if(name===null){ msg.textContent='التليفون أو الرقم السري غلط'; return; }
+  }
+  try{ localStorage.setItem('zamany_staff','1'); localStorage.setItem('zamany_staff_name',name||''); }catch(e){}
+  document.getElementById('staffModal').remove(); staffInit();
+}
 function sendToOrders(){
   let list=Object.values(order);
   if(list.length===0){ alert('مفيش حاجة في السلة'); return; }
   if(!validateCustomerInfo()) return;
-  let payload={v:1,n:(document.getElementById('custName').value||'').trim(),p:(document.getElementById('custPhone').value||'').trim(),t:buildExcelOrderText(false)};
+  let payload={v:1,n:(document.getElementById('custName').value||'').trim(),p:(document.getElementById('custPhone').value||'').trim(),t:buildExcelOrderText(false),by:(function(){try{return localStorage.getItem('zamany_staff_name')||'';}catch(e){return '';}})()};
   let bytes=new TextEncoder().encode(JSON.stringify(payload)),bin='';
   for(let k=0;k<bytes.length;k++) bin+=String.fromCharCode(bytes[k]);
   let b=btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
